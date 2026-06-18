@@ -7,6 +7,7 @@ return(
         <Link to="/register">Register</Link> | {" "}
         <Link to="/create">Create Debate</Link> | {" "}
         <Link to="/leaderboard">Leaderboard</Link> | {" "}
+        <Link to="/Notifications">Notifications</Link> | {" "}
         
     </div>
 )

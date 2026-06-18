@@ -13,6 +13,8 @@ function DebateCard({debate}){
 
         <p>{debate.description}</p>
 
+        <p>Category:{debate.category}</p>
+
         <Link to={`/debate/${debate.id}`}>
         
         join debate

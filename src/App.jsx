@@ -9,6 +9,7 @@ import Profile from "./pages/Profile";
 import Leaderboard from "./pages/Leaderboard";
 import DebateCard from "./components/DebateCard";
 import Navbar from "./components/Navbar";
+import Notifications from "./pages/Notifications";
 
 function App (){
 
@@ -25,6 +26,7 @@ function App (){
       <Route path="/Profile" element={<Profile />}/>
       <Route path="/leaderboard" element={<Leaderboard />}/>
       <Route path="/DebateCard" element={<DebateCard/>}/>
+      <Route path="/Notifications" element={<Notifications/>}/>
      
     </Routes>
     
