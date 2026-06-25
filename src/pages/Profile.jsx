@@ -65,6 +65,11 @@ function Profile(){
     return(
         <div>
             <h1>Profile</h1>
+
+            <img
+            src={user.profileImage}
+            alt="Profile"
+            width={"100"}/>
             
             <p>
                 <strong>Email:</strong>{" "}

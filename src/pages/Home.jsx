@@ -3,8 +3,9 @@ import {db} from "../services/firebase";
 import { useState,useEffect } from "react";
 import DebateCard from "../components/DebateCard";
 import Navbar from "../components/Navbar";
+import {deleteDoc,doc} from "firebase/firestore";
 
-function Home({debate}){
+function Home(){
     const [ debates,setDebates]=useState([]); //store the debates in []
     const [search,setSearch]=useState("");
     const [SelectedCategory,setSelectedCategory]=useState("");
@@ -30,16 +31,17 @@ function Home({debate}){
     };
 
     const filterDebates=debates.filter((debate)=>{
+        if (!debate) return false;
 
         const matchSearch=debate.title?.toLowerCase().
         includes(search.toLowerCase());
 
         const matchCategory=
         SelectedCategory === "" || 
-        debate.category === selectedCategory;
+        debate.category === SelectedCategory;
 
-        return matchSearch && matchCategory
-    })
+        return matchSearch && matchCategory;
+    });
 
   const trendingDebates =
   [...debates].sort(
@@ -48,9 +50,19 @@ function Home({debate}){
       (a.totalVotes || 0)
   );
 
-  
+  const deleteDebate = async (debateId) => {
+    try {
+      await deleteDoc(doc(db, "debates", debateId));
 
-    return(
+      alert("Debate Deleted");
+
+      fetchDebates();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+    return (
         <>
         <Navbar/>
 
@@ -66,19 +78,43 @@ function Home({debate}){
         value={SelectedCategory}
         onChange={(e)=>setSelectedCategory(e.target.value)}>
 
-        <option value=" ">All</option>
-        <option value="Technology">Technology</option>
-        <option value="Education">Education</option>
-        <option value="Politics">Politics</option>
+                <option value="">All</option>
+                <option value="Technology">Technology</option>
+                <option value="Education">Education</option>
+                <option value="Politics">Politics</option>
+                <option value="Pollution">Pollution</option>
+
+            <option value="Science">Scienece</option>
+
+            <option value="Business">Business</option>
+
+            <option value="Environment">Environment</option>
+
+            <option value="AI">AI</option>
+
+            <option value="Entertainment">Entertainment</option>
+            
+            <option value="Philosophy">Philosophy</option>
+
+            <option value="Ethics">Ethics</option>
+
+            <option value="Health">Health</option>
+
+            <option value="Startups">Startups</option>
         </select>
 
-        {filterDebates.map((debate)=>(
-            <DebateCard
-            
-            key={debate.id}
-            debate={debate}/>
-        ))}
 
+        {filterDebates.filter(Boolean).map((debate) => (
+  <div key={debate.id}>
+    <DebateCard debate={debate} />
+
+    <button
+      onClick={() => deleteDebate(debate.id)}
+    >
+      🗑️ Delete Debate
+    </button>
+  </div>
+))}
         
 
         

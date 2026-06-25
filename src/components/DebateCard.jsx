@@ -15,6 +15,14 @@ function DebateCard({debate}){
 
         <p>Category:{debate.category}</p>
 
+        <p>
+            <strong>Formate:</strong> {debate.formate}
+        </p>
+
+        <p>
+            <strong>Room Type:</strong>{debate.roomType}
+        </p>
+
         <Link to={`/debate/${debate.id}`}>
         
         join debate
