@@ -1,4 +1,4 @@
-import { BrowserRouter,Routes,Route } from "react-router-dom";
+import { BrowserRouter,Routes,Route,Navigate} from "react-router-dom";
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -17,6 +17,9 @@ import Admin from "./pages/Admin";
 import Report from "./pages/Report";
 import Announcements from "./pages/Announcements";
 import Settings from "./pages/Settings";
+import Dashboard from "./pages/Dashboard";
+import Moderator from "./pages/Moderator";
+import ProtectedRoute from "./pages/ProtectedRoutes";
 
 function App (){
 
@@ -25,7 +28,7 @@ function App (){
 
     <Routes>
 
-      <Route path="/" element={<Home />}/>
+      <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>}/> 
       <Route path="/login" element={ <Login/>}/>
       <Route path="/Register" element={<Register />}/>
       <Route path="/create" element={<CreateDebate/>}/>
@@ -40,7 +43,9 @@ function App (){
       <Route path="/Admin" element={<Admin/>}/>
       <Route path="/Report" element={<Report/>}/>
       <Route path="/Announcements" element={<Announcements/>}/>
-      <Route path="/Settings" element={<Settings/>}/>
+      <Route path="/settings" element={<Settings/>}/>
+      <Route path="/Dashboard" element={<Dashboard/>}/>
+      <Route path="/Moderator" element={<Moderator/>}/>
 
      
     </Routes>

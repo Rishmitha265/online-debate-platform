@@ -1,12 +1,8 @@
 import { useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore";
+import {collection,getDocs,query,where,} from "firebase/firestore";
 import { db } from "../services/firebase";
+import PageNavigator from "../components/PageNavigator";
 
 function Activity() {
   const [argumentsList, setArgumentsList] =
@@ -108,67 +104,138 @@ function Activity() {
     }
   };
 
-  return (
-    <div>
-      <h1>Activity History</h1>
+return (
+  <div className="min-h-screen bg-brand-bg text-brand-navy py-12 px-6">
 
-      <hr />
+    <PageNavigator/>
 
-      <h2>Arguments Posted</h2>
+    <h1 className="text-5xl font-bold text-center mb-12">
+      📜 Activity History
+    </h1>
 
-      <p>
-        Total Arguments:{" "}
-        {argumentsList.length}
-      </p>
+    <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="bg-brand-bg border border-brand-border rounded-2xl shadow-xl p-6">
 
-      {argumentsList.length === 0 ? (
-        <p>No arguments posted.</p>
-      ) : (
-        argumentsList.map((arg) => (
-          <div key={arg.id}>
-            <p>{arg.argument}</p>
+        <h2 className="text-3xl font-bold text-center text-brand-navy mb-4">
+          🗣 Arguments
+        </h2>
+
+        <p className="text-center font-semibold text-brand-purple mb-6">
+          Total Arguments : {argumentsList.length}
+        </p>
+
+        {argumentsList.length === 0 ? (
+
+          <p className="text-center text-brand-text">
+            No arguments posted.
+          </p>
+
+        ) : (
+
+          <div className="space-y-4">
+
+            {argumentsList.map((arg) => (
+
+              <div
+                key={arg.id}
+                className="bg-purple-950/30 rounded-lg p-4 border border-brand-border"
+              >
+                <p className="text-brand-navy">
+                  {arg.argument}
+                </p>
+              </div>
+
+            ))}
+
           </div>
-        ))
-      )}
 
-      <hr />
+        )}
 
-      <h2>Replies Posted</h2>
+      </div>
+      <div className="bg-brand-bg border border-brand-border rounded-2xl shadow-xl p-6">
 
-      <p>
-        Total Replies: {replies.length}
-      </p>
+        <h2 className="text-3xl font-bold text-center text-brand-navy mb-4">
+          💬 Replies
+        </h2>
 
-      {replies.length === 0 ? (
-        <p>No replies posted.</p>
-      ) : (
-        replies.map((reply) => (
-          <div key={reply.id}>
-            <p>{reply.reply}</p>
+        <p className="text-center font-semibold text-green-400 mb-6">
+          Total Replies : {replies.length}
+        </p>
+
+        {replies.length === 0 ? (
+
+          <p className="text-center text-brand-text">
+            No replies posted.
+          </p>
+
+        ) : (
+
+          <div className="space-y-4">
+
+            {replies.map((reply) => (
+
+              <div
+                key={reply.id}
+                className="bg-purple-950/30 rounded-lg p-4 border border-brand-border"
+              >
+                <p className="text-brand-navy">
+                  {reply.reply}
+                </p>
+              </div>
+
+            ))}
+
           </div>
-        ))
-      )}
 
-      <hr />
+        )}
 
-      <h2>Messages Sent</h2>
+      </div>
+      <div className="bg-brand-bg border border-brand-border rounded-2xl shadow-xl p-6">
 
-      <p>
-        Total Messages:{" "}
-        {messages.length}
-      </p>
+        <h2 className="text-3xl font-bold text-center text-brand-navy mb-4">
+          📩 Messages
+        </h2>
 
-      {messages.length === 0 ? (
-        <p>No messages sent.</p>
-      ) : (
-        messages.map((msg) => (
-          <div key={msg.id}>
-            <p>{msg.message}</p>
+        <p className="text-center font-semibold text-brand-blue mb-6">
+          Total Messages : {messages.length}
+        </p>
+
+        {messages.length === 0 ? (
+
+          <p className="text-center text-brand-text">
+            No messages sent.
+          </p>
+
+        ) : (
+
+          <div className="space-y-4">
+
+            {messages.map((msg) => (
+
+              <div
+                key={msg.id}
+                className="bg-purple-950/30 rounded-lg p-4 border border-brand-border"
+              >
+                <p className="text-brand-navy">
+                  {msg.message}
+                </p>
+              </div>
+
+            ))}
+
           </div>
-        ))
-      )}
+
+        )}
+
+      </div>
+
     </div>
-  );
+
+  </div>
+);
+
+
+
 }
 
 export default Activity;

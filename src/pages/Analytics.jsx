@@ -1,8 +1,9 @@
-import {useState} from "react";
+import {useState,useEffect} from "react";
 import {collection,getDocs} from "firebase/firestore";
 import {db} from "../services/firebase";
+import PageNavigator from "../components/PageNavigator";
 
-function Analysics(){
+function Analytics(){
 
     const[totalDebates,setTotalDebates]=useState(0);
     const[totalArguments,setTotalArguments]=useState(0);
@@ -10,16 +11,22 @@ function Analysics(){
     const[ActiveUser,setActiveUser]=useState(0);
 
 
+     useEffect(()=>{
+            fetchAnalytics()
+        },[])
 
-    const fetchAnalytics = ()=>{
+
+
+    const fetchAnalytics = async()=>{
+
         try{
         
             const debateSnapshot=
-                getDocs(collection(db,"debates"));
+                await getDocs(collection(db,"debates"));
 
             setTotalDebates(debateSnapshot.size);
 
-            const argumentSnapshot=getDocs(collection(db,"arguments"));
+            const argumentSnapshot= await getDocs(collection(db,"arguments"));
 
             setTotalArguments(argumentSnapshot.size);
 
@@ -58,28 +65,43 @@ function Analysics(){
 };
 
 return(
-    <div>
-        <h1>
+    <div className="min-h-screen bg-brand-bg text-brand-navy py-12 px-6">
+
+        <PageNavigator/>
+        <h1 className="text-5xl font-bold text-center mb-12">
             📊Debate Analytics
         </h1>
+       
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
 
-        <h2>
+        <div className="bg-brand-bg border border-brand-border rounded-2xl shadow-xl p-8 text-center">
+        <h2 className="text-xl font-semibold text-brand-text mb-4">
             Total Debates:{totalDebates}
         </h2>
+        </div>
 
-        <h2>
+
+        <div className="bg-brand-bg border border-brand-border rounded-2xl shadow-xl p-8 text-center">
+        <h2 className="text-5xl font-bold text-brand-purple">
             Total Arguments:{totalArguments}
         </h2>
+        </div>
 
-        <h2>
+
+        <div className="bg-brand-bg border border-brand-border rounded-2xl shadow-xl p-8 text-center">
+        <h2 className="text-xl font-semibold text-brand-text mb-4">
             Total Votes:{totalVotes}
         </h2>
+        </div>
 
-        <h2>
-            Most Active Users:{ActiveUser}
+        <div className="bg-brand-bg border border-brand-border rounded-2xl shadow-xl p-8 text-center">
+        <h2 className="text-xl font-semibold text-brand-text mb-4">
+            Most Active Users:{ActiveUser||"NO DATA"}
         </h2>
+        </div>
+    </div>
     </div>
 );
 }
 
-export default Analysics;
+export default Analytics;

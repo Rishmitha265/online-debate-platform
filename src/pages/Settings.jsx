@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {getAuth,updatePassword,deleteUser} from "firebase/auth";
 import {doc,setDoc,getDoc}from "firebase/firestore";
 import {db} from "../services/firebase";
+import PageNavigator from "../components/PageNavigator";
 function Settings (){
 
    
@@ -10,7 +11,7 @@ function Settings (){
 
     const [Password,setPassword]=useState("");
     const [notifications,setNotifications]=useState(true);
-    const [darkMode,setDarkMode]=useState(false);
+    // const [darkMode,setDarkMode]=useState(false);
     const [privateAccount,setPrivateAccount]=useState(false);
     const [ProfileImage,setProfileImage]=useState("");
     const [blockedEmail,setBlockedEmail]=useState("");
@@ -18,14 +19,14 @@ function Settings (){
     const [bannerImage,setBannerImage]=useState("");
 
  
-    const changePassword=()=>{
+    const changePassword= async()=>{
     
         try{
 
         
         if(!auth.currentUser) return;
 
-        updatePassword(auth.currentUser,Password);
+         await updatePassword(auth.currentUser,Password);
 
         alert("Password Updated")
         setPassword("");
@@ -33,7 +34,7 @@ function Settings (){
         console.log(error);
     }
 }
-   const deleteAccount=()=>{
+   const deleteAccount=async()=>{
     try{
         if(!auth.currentUser) return;
 
@@ -43,7 +44,7 @@ function Settings (){
 
         if(!confirmDelete) return;
 
-        deleteUser(auth.currentUser);
+        await deleteUser(auth.currentUser);
 
         alert("Account Deleted Successfully");
     }catch(error){
@@ -180,77 +181,79 @@ const uploadImage=async(file)=>{
 };
 
    return(
+     <div
+     className={`min-h-screen p-8 ${
+      "bg-brand-bg text-brand-navy"
+    }`}>
 
-    
-
-    <div
-     style={{
-      backgroundColor:darkMode?"121212":"white",
-      color:darkMode?"white":"black",
-      minHeight:"100vh",
-      padding:"20px",
-     }}>
-      <h1>⚙️ User Settings</h1>
-
-      <h2>Profile</h2>
-
-      <h2>Banner Image</h2>
-
-      <input
-      type="file"
-      accept="image/*"
-      onChange={(e)=>uploadImage(e.target.files[0])}/>
-
-      {bannerImage && (
-      <img
-        src={bannerImage}
-        alt="Banner"
-        width="100%"
-        height="150"
-      />
-    )}
-
-      <input
-      type="file"
-      accept="image/*"
-      onChange={(e)=>uploadProfileImage(e.target.files[0])}/>
+      <PageNavigator/>
+      <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl p-8">
       
+      <h4 className="text-5xl font-bold text-center text-brand-purple mb-10" >
+        ⚙️ User Settings</h4>
 
-      {privateAccount ? (
-        <p>Private Account Enabled</p>
-      ):(
-        <p>
-          Email:{auth.currentUser?.email}
-        </p>
-      )}
+      <h2 className="text-3xl font-bold text-center mb-4">
+        Banner</h2>
 
-      {ProfileImage && (
-        <div
-        style={{
-          width:"150px",
-          height:"150px",
-          borderRadius:"50%",
-          border: "4px solid #e1306c",
-          display: "flex",
-          justifyContent:"center",
-          alignItems:"center",
-          overflow:"hidden",
+      <div className="w-full h-52 border-2 border-dashed border-brand-border rounded-xl flex items-center overflow-hidden mb-6">
+        {bannerImage ? (
+          <img
+            src={bannerImage}
+            alt="Banner"
+            className="w-full h-full text-brand-text"/>
+        ):(
+          <label 
+          className="cursor-pointer text-brand-text">
+            upload Banner
+            <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onCanPlay={(e)=>uploadImage(e.target.files[0])}/>
+          </label>
+        )}
+      </div>
 
-        }}>
+      <h2 className="text-3xl font-bold text-center mb-4">
+        Profile</h2>
+
+      <div className="flex flex-col items-center">
+
+      <div className="w-40 h-40 rounded-full border-4 border-brand-purple overflow-hidden flex items-center justify-center bg-white/10">
+
+      {ProfileImage?(
         <img
         src={ProfileImage}
         alt="Profile"
-        style={{
-          width:"100%",
-          height:"100%",
-          objectFit:"cover",
-        }}/>
-      </div>
+        className="w-full h-full object-cover"/>
+      ):(
+        <span className="text-brand-text">
+          No Image
+        </span>
       )}
+
+      </div>
+
+      <label className="mt-3 cursor-pointer bg-brand-purple hover:bg-brand-purple-dark text-white px-4 py-2 rounded-lg">
+         upload profile
+
+        <input
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e)=>uploadProfileImage(e.target.value[0])}/>
+      </label>
+    </div>
+
+    <p className="text-center mt-4  mb-8 font-bold text-lg">
+      {privateAccount? "🔒 This account is Private":
+      `Email:${auth.currentUser?.email}`}
+    </p>
       
 
 
-      <h2>Change Password</h2>
+      <h2 className="text-2xl font-bold mt-8 mb-4"
+      >Change Password</h2>
 
       <input
         type="password"
@@ -259,85 +262,110 @@ const uploadImage=async(file)=>{
         onChange={(e) =>
           setPassword(e.target.value)
         }
+      className="w-full bg-brand-bg border border-brand-input-border rounded-lg p-3 mb-4"
       />
 
-      <button onClick={changePassword}>
+      <button onClick={changePassword}
+     className="bg-brand-purple hover:bg-brand-purple-dark text-white px-6 py-3 rounded-lg">
         Update Password
       </button>
 
-      <button onClick={savePrivacySettings}>
+      <button onClick={savePrivacySettings}
+      className="ml-4 bg-brand-secondary hover:bg-brand-secondary-hover text-white px-6 py-3 rounded-lg">
         Save Privacy Settings
       </button>
+     
+      <div className="space-y-8 mt-10">
+      <div className="flex items-center justify-between mt-8">
+        <h2 className="text-2xl font-bold mt-10">
+        Notification Preferences</h2>
 
-
-      <h2>Notification Preferences</h2>
-
-      <label>
+      <label  className="flex items-center gap-3 mt-4">
         <input
           type="checkbox"
           checked={notifications}
           onChange={() =>
-            setNotifications(
-              !notifications
-            )
+            setNotifications(!notifications)
           }
+          className="w-5 h-5"
         />
         Enable Notifications
       </label>
+      </div>
+      
+      <div className="flex items-center justify-between mt-6">
+        <h2 className="text-2xl font-bold mt-10">
+        Privacy Options</h2>
 
-      <h2>Privacy Options</h2>
-
-      <label>
+      <label className="flex items-center gap-2">
         <input
           type="checkbox"
           checked={privateAccount}
           onChange={() =>
-            setPrivateAccount(
-              !privateAccount
-            )
+            setPrivateAccount(!privateAccount)
           }
+          className="w-5 h-5"
         />
         Private Account
       </label>
+      </div>
+      
+      
+      <div className="bg-gray-50 rounded-2xl p-5 flex justify-between items-center">
+        {/* <h2 className="text-2xl font-bold mt-10">
+        Theme</h2>
 
-      <h2>Theme</h2>
-
-      <label>
+      <label className="flex items-center gap-3 mt-4">
         <input
           type="checkbox"
           checked={darkMode}
           onChange={() =>
             setDarkMode(!darkMode)
           }
+          className="w-5 h-5"
         />
         Dark Mode
-      </label>
+      </label> */}
+      </div>
+      </div>
+      
 
-      <h2>Blocked Users</h2>
-
+      <h2 className="text-2xl font-bold text-center mt-14">
+        Blocked Users</h2>
+      
+      <div className="flex gap-4 mt-4 max-w-xl mx-auto">
       <input
       type="email"
       placeholder="Enter the email"
       value={blockedEmail}
-      onChange={(e)=>setBlockedEmail(e.target.value)}/>
+      onChange={(e)=>setBlockedEmail(e.target.value)}
+      className="flex-1 bg-brand-bg border border-brand-input-border rounded-lg p-3"/>
 
-      <button onClick={block}>
+      <button onClick={block}
+       className="bg-red-600 hover:bg-red-700 text-white px-6 rounded-lg">
         Block user
       </button>
-
+      </div>
+       
+       <div>
       {blockedUsers.map((user,index)=>(
-        <p key={index}>
+        <p key={index}
+         className="bg-red-950/40 text-red-300 rounded-lg p-3 mb-2">
           🚫{user}
         </p>
       ))}
+      </div>
 
-      <h2>Account Deletion</h2>
+      <h2 className="text-2xl font-bold mt-12 text-red-600">
+        Account Deletion</h2>
 
-      <button
+       <button
         onClick={deleteAccount}
+        className="mt-5 bg-red-700 hover:bg-red-800 text-white px-8 py-3 rounded-xl"
       >
         Delete My Account
       </button>
+    </div>
     </div>
    )
   }

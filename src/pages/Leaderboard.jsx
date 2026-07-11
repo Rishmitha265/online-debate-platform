@@ -1,10 +1,10 @@
-import {collection,getDocs,} from "firebase/firestore";
+import {collection,getDocs} from "firebase/firestore";
 
-import {useState} from "react";
-
-import {useEffect, seState,} from "react";
+import {useEffect,useState} from "react";
 
 import { db } from "../services/firebase";
+
+import PageNavigator from "../components/PageNavigator";
 
 function Leaderboard() {
   const [users, setUsers] =
@@ -147,110 +147,116 @@ function Leaderboard() {
         return "🌱 BEGINEER"
       }
 
-  return (
-    <div>
-      <h1>
-        🏆 Leaderboard
-      </h1>
+      return (
+     <div className="min-h-screen bg-brand-bg text-brand-navy p-8">
 
-      {users.length ===
-      0 ? (
-        <p>
-          No leaderboard
-          data available
-        </p>
-      ) : (
-        users.map(
-          (
-            user,
-            index) => (
-            <div
-              key={
-                user.userEmail
-              }
-              style={{
-                border:"1px solid gray",
-                margin:"10px",
-                padding:"10px",
-              }}
-            >
-              <h3>
-                Rank # {index + 1}
-              </h3>
+      <PageNavigator/>
 
-              <p>
-                Email:
-                {
-                  user.userEmail
-                }
-              </p>
+    <h1 className="text-5xl font-bold text-center mb-10 text-brand-purple">
+      🏆 Leaderboard
+    </h1>
 
-              <p>
-                Votes:
-                {
-                  user.totalVotes
-                }
-              </p>
+    {users.length === 0 ? (
 
-              <p>
-                Badges:
-                {
-                  getBadge(user.totalVotes)
-                }
-              </p>
+      <div className="text-center text-brand-text text-xl">
+        No leaderboard data available
+      </div>
 
-              <p>
-                Arguments:
-                {
-                  user.totalArguments
-                }
-              </p>
+    ) : (
 
-              <p>
-                Reputation:
-                {user.totalVotes * 10}
-              </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 
-              <p>
-                Total
-                Debates:
-                {
-                  user.totalDebates
-                }
-              </p>
+        {users.map((user, index) => (
 
-              <p>
-                Audience Approval:
-                {
-                  (
-                    user.totalVotes/(user.totalArguments||1)
-                  ).toFixed(1)
-                }
-              </p>
+          <div
+            key={user.userEmail}
+            className="bg-brand-bg border border-brand-border rounded-2xl shadow-xl p-6 text-brand-navy hover:shadow-2xl transition duration-300"
+          >
 
-              <p>
-                Weekly Score:
-                {
-                  user.weeklyScore
-                }
-              </p>
+            <div className="flex justify-between items-center mb-4">
 
-              <p>
-                Monthly Score:
-                {
-                  user.monthlyScore
-                }
-              </p>
+              <h2 className="text-2xl font-bold text-brand-purple">
+                🥇 Rank #{index + 1}
+              </h2>
 
-              <p>
-                Wins:
-                {user.wins}
-              </p>
+              <span className="text-2xl">
+                {getBadge(user.totalVotes)}
+              </span>
+
             </div>
-          )
-        )
-      )}
-    </div>
+
+            <p className="mb-2 text-brand-text">
+              <span className="font-bold text-brand-navy">
+                📧 Email:
+              </span>{" "}
+              {user.userEmail||"Not Available"}
+            </p>
+
+            <p className="mb-2 text-brand-text">
+              <span className="font-bold text-brand-navy">
+                👍 Votes:
+              </span>{" "}
+              {user.totalVotes}
+            </p>
+
+            <p className="mb-2 text-brand-text">
+              <span className="font-bold text-brand-navy">
+                💬 Arguments:
+              </span>{" "}
+              {user.totalArguments}
+            </p>
+
+            <p className="mb-2 text-brand-text">
+              <span className="font-bold text-brand-navy">
+                ⭐ Reputation:
+              </span>{" "}
+              {user.totalVotes * 10}
+            </p>
+
+            <p className="mb-2 text-brand-text">
+              <span className="font-bold text-brand-navy">
+                🎯 Total Debates:
+              </span>{" "}
+              {user.totalDebates}
+            </p>
+
+            <p className="mb-2 text-brand-text">
+              <span className="font-bold text-brand-navy">
+                ❤️ Audience Approval:
+              </span>{" "}
+              {(user.totalVotes / (user.totalArguments || 1)).toFixed(1)}
+            </p>
+
+            <p className="mb-2 text-brand-text">
+              <span className="font-bold text-brand-navy">
+                📅 Weekly Score:
+              </span>{" "}
+              {user.weeklyScore}
+            </p>
+
+            <p className="mb-2 text-brand-text">
+              <span className="font-bold text-brand-navy">
+                📆 Monthly Score:
+              </span>{" "}
+              {user.monthlyScore}
+            </p>
+
+            <p className="text-brand-text">
+              <span className="font-bold text-brand-navy">
+                🏅 Wins:
+              </span>{" "}
+              {user.wins}
+            </p>
+
+          </div>
+
+        ))}
+
+      </div>
+
+    )}
+
+  </div>
   );
 }
 

@@ -4,6 +4,7 @@ import { useState,useEffect } from "react";
 import DebateCard from "../components/DebateCard";
 import Navbar from "../components/Navbar";
 import {deleteDoc,doc} from "firebase/firestore";
+import PageNavigator from "../components/PageNavigator";
 
 function Home(){
     const [ debates,setDebates]=useState([]); //store the debates in []
@@ -52,6 +53,10 @@ function Home(){
 
   const deleteDebate = async (debateId) => {
     try {
+
+      const confirmDelete=window.confirm("Are you sure want to delete the debate?");
+
+      if(!confirmDelete) return;
       await deleteDoc(doc(db, "debates", debateId));
 
       alert("Debate Deleted");
@@ -66,17 +71,32 @@ function Home(){
         <>
         <Navbar/>
 
-        <h1>DebateHub</h1>
+        <div className="text-center mb-10">
+
+          <PageNavigator/>
+
+        <h1 className="text-brand-navy text-6xl font-bold"> 
+          🔥DebateHub
+        </h1>
+        
+        <p className=" text-center text-brand-text mt-3 text-lg">
+          Express your opinions. Debate with the world
+        </p>
+        </div>
+
+        <div className="flex flex-col md:flex-row justify-center gap-4 mb-10">
 
         <input
         type="text"
-        placeholder="Search debates.."
+        placeholder="🔍Search debates.."
         value={search}
-        onChange={(e)=>setSearch(e.target.value)}/>
+        onChange={(e)=>setSearch(e.target.value)}
+        className="w-full md:w-96 px-4 py-3 bg-brand-bg border border-brand-input-border rounded-xl shadow focus:outline-none focus:ring-2 focus:ring-brand-purple"/>
 
         <select
         value={SelectedCategory}
-        onChange={(e)=>setSelectedCategory(e.target.value)}>
+        onChange={(e)=>setSelectedCategory(e.target.value)}
+        className="px-4 py-3 bg-brand-bg border border-brand-input-border rounded-xl shadow focus:outline-none focus:ring-2 focus:ring-brand-purple">
 
                 <option value="">All</option>
                 <option value="Technology">Technology</option>
@@ -102,20 +122,24 @@ function Home(){
 
             <option value="Startups">Startups</option>
         </select>
-
+      </div>
+    
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 
         {filterDebates.filter(Boolean).map((debate) => (
-  <div key={debate.id}>
+  <div key={debate.id}
+className="bg-brand-bg border border-brand-border rounded-2xl shadow-lg p-6 hover:shadow-2xl transition duration-300 h-fit" >
     <DebateCard debate={debate} />
 
     <button
       onClick={() => deleteDebate(debate.id)}
+      className="w-full mt-3 bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg"
     >
       🗑️ Delete Debate
     </button>
   </div>
 ))}
-        
+     </div>   
 
         
         </>
