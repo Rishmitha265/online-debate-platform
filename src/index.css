@@ -1,112 +1,168 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-bg: #1A1625;
-  --color-brand-navy: #F5F3FF;
-  --color-brand-text: #B8AED1;
-  --color-brand-purple: #A855F7;
-  --color-brand-purple-dark: #7E22CE;
-  --color-brand-purple-medium: #C026D3;
-  --color-brand-purple-medium-hover: #A21CAF;
-  --color-brand-pink: #F472B6;
-  --color-brand-blue: #38BDF8;
-  --color-brand-secondary: #2D2444;
-  --color-brand-secondary-hover: #3D2F5C;
-  --color-brand-border: #3D2F5C;
-  --color-brand-input-border: #4C3575;
+  /* Same token names your components already use — just re-themed */
+  --color-brand-bg: #0b0716;
+  --color-brand-surface: #150f26;
+  --color-brand-navy: #f5f3ff;
+  --color-brand-text: #b8aed1;
+  --color-brand-purple: #a855f7;
+  --color-brand-purple-dark: #7e22ce;
+  --color-brand-purple-medium: #c026d3;
+  --color-brand-purple-medium-hover: #a21caf;
+  --color-brand-pink: #f472b6;
+  --color-brand-blue: #38bdf8;
+  --color-brand-blue-dark: #0284c7;
+  --color-brand-secondary: #2d2444;
+  --color-brand-secondary-hover: #3d2f5c;
+  --color-brand-border: rgba(168, 85, 247, 0.18);
+  --color-brand-input-border: rgba(168, 85, 247, 0.28);
 }
 
 :root {
-  --text: #B8AED1;
-  --text-h: #F5F3FF;
-  --bg: #0F0F1A;
-  --border: #3D2F5C;
-  --code-bg: #241C36;
-  --accent: #A855F7;
-  --accent-bg: rgba(168, 85, 247, 0.15);
-  --accent-border: rgba(168, 85, 247, 0.5);
-  --social-bg: rgba(61, 47, 92, 0.5);
-  --shadow:
-    rgba(168, 85, 247, 0.25) 0 10px 25px -3px, rgba(244, 114, 182, 0.15) 0 4px 10px -2px;
+  --text: #b8aed1;
+  --text-h: #f5f3ff;
+  --bg: #0b0716;
+  --border: rgba(168, 85, 247, 0.18);
+  --code-bg: #241c36;
+  --accent: #a855f7;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --grad-button: linear-gradient(90deg, #7c3aed 0%, #a855f7 50%, #38bdf8 100%);
+  --grad-button-hover: linear-gradient(90deg, #6d28d9 0%, #9333ea 50%, #0ea5e9 100%);
+  --grad-glow:
+    radial-gradient(600px circle at 20% 10%, rgba(168, 85, 247, 0.28), transparent 55%),
+    radial-gradient(700px circle at 85% 30%, rgba(56, 189, 248, 0.22), transparent 55%),
+    radial-gradient(500px circle at 50% 100%, rgba(244, 114, 182, 0.18), transparent 60%);
+
+  --shadow-card:
+    rgba(0, 0, 0, 0.17) 0 -23px 25px 0 inset,
+    rgba(0, 0, 0, 0.15) 0 -36px 30px 0 inset,
+    rgba(0, 0, 0, 0.10) 0 -79px 40px 0 inset,
+    rgba(0, 0, 0, 0.06) 0 2px 1px,
+    rgba(0, 0, 0, 0.09) 0 4px 2px,
+    rgba(0, 0, 0, 0.09) 0 8px 4px,
+    rgba(0, 0, 0, 0.09) 0 16px 8px,
+    rgba(0, 0, 0, 0.09) 0 32px 16px;
+
+  --sans: 'Space Grotesk', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --heading: 'Space Grotesk', system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
+  font: 17px/145% var(--sans);
   color: var(--text);
   background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
 }
+
+/* Space Grotesk (self-loaded via Google Fonts in index.html) */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 body {
   margin: 0;
-  width:100%;
-  overflow-x:hidden;
-  background: #0F0F1A;
-
+  width: 100%;
+  overflow-x: hidden;
+  background: var(--bg);
+  background-image: var(--grad-glow);
+  background-attachment: fixed;
+  min-height: 100vh;
+  color: var(--text-h);
 }
 
 #root {
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
   min-height: 100svh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
 }
 
-h1,
-h2 {
+h1, h2, h3, h4 {
   font-family: var(--heading);
-  font-weight: 500;
-  color:inherit;
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
   color: var(--text-h);
+  letter-spacing: -0.02em;
+  font-weight: 700;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+p { margin: 0; color: var(--text); }
+
+/* ---- Utility classes ---- */
+@layer utilities {
+  .glass-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    border: 1px solid rgba(168, 85, 247, 0.18);
+    border-radius: 1.25rem;
+    box-shadow: var(--shadow-card);
+  }
+  .glass-panel {
+    background: linear-gradient(180deg, rgba(21,15,38,0.75), rgba(11,7,22,0.75));
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid rgba(168, 85, 247, 0.18);
+    border-radius: 1.5rem;
+  }
+  .btn-gradient {
+    background: var(--grad-button);
+    background-size: 200% auto;
+    color: #fff;
+    transition: background-position 400ms ease, box-shadow 300ms ease, transform 200ms ease;
+    box-shadow: 0 8px 24px -8px rgba(168, 85, 247, 0.55);
+  }
+  .btn-gradient:hover {
+    background-position: right center;
+    box-shadow: 0 12px 32px -6px rgba(168, 85, 247, 0.7), 0 0 0 1px rgba(168, 85, 247, 0.4);
+    transform: translateY(-1px);
+  }
+  .btn-gradient:active { transform: translateY(0); }
+
+  .btn-ghost-glow {
+    background: rgba(168, 85, 247, 0.08);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    color: #f5f3ff;
+    transition: all 250ms ease;
+  }
+  .btn-ghost-glow:hover {
+    background: rgba(168, 85, 247, 0.16);
+    border-color: rgba(168, 85, 247, 0.5);
+    box-shadow: 0 0 24px -4px rgba(168, 85, 247, 0.5);
+  }
+
+  .btn-danger {
+    background: linear-gradient(90deg, #ef4444, #f472b6);
+    color: white;
+    transition: all 200ms ease;
+    box-shadow: 0 6px 20px -8px rgba(239, 68, 68, 0.6);
+  }
+  .btn-danger:hover { filter: brightness(1.1); box-shadow: 0 10px 26px -6px rgba(239, 68, 68, 0.8); }
+
+  .input-disco {
+    background: rgba(21, 15, 38, 0.7);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    color: #f5f3ff;
+    border-radius: 0.75rem;
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+  }
+  .input-disco::placeholder { color: rgba(184, 174, 209, 0.6); }
+  .input-disco:focus {
+    outline: none;
+    border-color: rgba(168, 85, 247, 0.6);
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.18);
+  }
+
+  .text-gradient {
+    background: var(--grad-button);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
 }
+
+@keyframes float-orb {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(20px, -30px, 0) scale(1.08); }
+}
+.animate-float-orb { animation: float-orb 12s ease-in-out infinite; }

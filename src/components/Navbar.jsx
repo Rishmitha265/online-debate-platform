@@ -1,116 +1,74 @@
-import {useState} from "react";
-import {Link} from "react-router-dom";
-import {FaBars,FaTimes} from "react-icons/fa";
-import {auth} from "../services/firebase";
-function Navbar(){
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { FaBars, FaTimes } from "react-icons/fa";
+import { auth } from "../services/firebase";
 
-    const user =auth.currentUser;
+function Navbar() {
+  const user = auth.currentUser;
+  const [menuOpen, setMenuOpen] = useState(false);
 
-    const [menuOpen,setMenuOpen]=useState(false);
-return(
-
-    <nav className="bg-brand-purple text-white shadow-lg">
-    <div className="w-full flex justify-between items-center px-8">
-
-        <div className="text-2xl font-bold">
-            🔥DebateHub
+  return (
+    <nav className="sticky top-4 z-50 mx-4 sm:mx-6 lg:mx-8">
+      <div className="glass-panel flex items-center justify-between px-4 sm:px-6 py-3">
+        <div className="text-xl sm:text-2xl font-bold tracking-tight">
+          <span>🔥</span>
+          <span className="text-gradient">DebateHub</span>
         </div>
 
-        <div className="flex gap-8">
-
-            <Link className="hover:text-brand-pink" to="/">
-                Home
-            </Link>
-
-            <Link className="hover:text-brand-pink" to="/login">
-                Login
-            </Link>
-
-            <Link className="hover:text-brand-pink" to="/register">
-                Register
-            </Link>
-
-             {user && (
-        <>
-            <Link
-                className="hover:text-brand-pink"
-                to="/notifications"
-            >
-                🔔 Notifications
-            </Link>
-
-            <Link
-                className="hover:text-brand-pink"
-                to="/profile"
-            >
-                👤 Profile
-            </Link>
-        </>
-        )}
-
+        <div className="hidden md:flex items-center gap-6 text-sm text-brand-text">
+          <Link className="transition-colors hover:text-white" to="/">Home</Link>
+          {!user && (
+            <>
+              <Link className="transition-colors hover:text-white" to="/login">Login</Link>
+              <Link className="transition-colors hover:text-white" to="/register">Register</Link>
+            </>
+          )}
+          {user && (
+            <>
+              <Link className="transition-colors hover:text-white" to="/notifications">🔔 Notifications</Link>
+              <Link className="transition-colors hover:text-white" to="/profile">👤 Profile</Link>
+            </>
+          )}
         </div>
 
-        <button onClick={()=>setMenuOpen(!menuOpen)}
-            className="text-2xl">
-            {menuOpen ? <FaTimes /> : <FaBars />}
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          className="btn-ghost-glow grid h-10 w-10 place-items-center rounded-xl text-lg"
+          aria-label="Toggle menu"
+        >
+          {menuOpen ? <FaTimes /> : <FaBars />}
         </button>
-    </div>
+      </div>
 
-    {menuOpen && (
-       <div className="absolute top-16 right-8 bg-brand-bg text-brand-navy rounded-xl shadow-lg w-64 border border-brand-border">
-
-    <Link to="/create" className="block px-5 py-3 hover:bg-white/10">
-        ➕ Create Debate
-    </Link>
-
-    <Link to="/leaderboard" className="block px-5 py-3 hover:bg-white/10">
-        🏆 Leaderboard
-    </Link>
-
-    <Link to="/notifications" className="block px-5 py-3 hover:bg-white/10">
-        🔔 Notifications
-    </Link>
-
-    <Link to="/dashboard" className="block px-5 py-3 hover:bg-white/10">
-        📈 Dashboard
-    </Link>
-
-    <Link to="/analytics" className="block px-5 py-3 hover:bg-white/10">
-        📊 Analytics
-    </Link>
-
-    <Link to="/trending" className="block px-5 py-3 hover:bg-white/10">
-        📈 Trending
-    </Link>
-
-    <Link to="/activity" className="block px-5 py-3 hover:bg-white/10">
-        📝 Activity
-    </Link>
-
-    <Link to="/admin" className="block px-5 py-3 hover:bg-white/10">
-        👨‍💼 Admin
-    </Link>
-
-    <Link to="/moderator" className="block px-5 py-3 hover:bg-white/10">
-        🛡 Moderator
-    </Link>
-
-    <Link to="/report" className="block px-5 py-3 hover:bg-white/10">
-        📋 Report
-    </Link>
-
-    <Link to="/announcements" className="block px-5 py-3 hover:bg-white/10">
-        📢 Announcements
-    </Link>
-
-    <Link to="/settings" className="block px-5 py-3 hover:bg-white/10">
-        ⚙ Settings
-    </Link>
+      {menuOpen && (
+        <div className="glass-panel absolute right-4 sm:right-6 lg:right-8 top-full mt-3 w-72 overflow-hidden">
+          {[
+            ["/create", "➕", "Create Debate"],
+            ["/leaderboard", "🏆", "Leaderboard"],
+            ["/notifications", "🔔", "Notifications"],
+            ["/dashboard", "📈", "Dashboard"],
+            ["/analytics", "📊", "Analytics"],
+            ["/trending", "📈", "Trending"],
+            ["/activity", "📝", "Activity"],
+            ["/admin", "👨‍💼", "Admin"],
+            ["/moderator", "🛡", "Moderator"],
+            ["/report", "📋", "Report"],
+            ["/announcements", "📢", "Announcements"],
+            ["/settings", "⚙", "Settings"],
+          ].map(([to, icon, label]) => (
+            <Link
+              key={to}
+              to={to}
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-3 px-5 py-3 text-sm text-brand-text transition-colors hover:bg-white/5 hover:text-white"
+            >
+              <span className="text-base">{icon}</span> {label}
+            </Link>
+          ))}
         </div>
-    )}
+      )}
     </nav>
-)
-
+  );
 }
 
 export default Navbar;

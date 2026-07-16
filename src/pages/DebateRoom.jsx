@@ -1,3 +1,5 @@
+//DebateRoom.jsx
+
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 
@@ -16,10 +18,10 @@ function DebateRoom() {
   const [side, setSide] = useState("");
   const [argument, setArgument] = useState("")
   const [argumentsList, setArgumentsList] = useState([]);
-  const [joinCall,setJoinCall]=useState(false);
+  const [showVideoCall,setShowVideoCall]=useState(false);
   const [message,setMessage]=useState("");
   const [messages,setMessages]=useState([]);
-  const [SpeakerTimeLeft,setSpeakerTimeLeft]=useState(50);
+  const [SpeakerTimeLeft,setSpeakerTimeLeft]=useState(0);
   const [debateTimeLeft,setDebateTimeLeft]=useState("");
   const [replyTexts,setReplyTexts]=useState({});
   const [replies,setReplies]=useState([]);
@@ -28,13 +30,13 @@ function DebateRoom() {
   const [speakerQueue,setSpeakerQueue]=useState([]);
   const [activeSpeaker,setActiveSpeaker]=useState("");
   const [viewCount,setViewCount]=useState(0);
-  const [debateEnded,setDebateEnded]=useState(false);           //votes will display once the debate is completed
+  const [debateEnded,setDebateEnded]=useState(false);
   const [teamvote,setTeamVote]=useState({Support:0,Oppose:0,neutral:0});
   const [supportCount, setSupportCount] = useState(0);
   const [opposeCount, setOpposeCount] = useState(0);
   const [isActiveSpeaker, setIsActiveSpeaker] = useState(false);
- 
-  
+
+
 
   async function fetchReplies() {
   try {
@@ -57,6 +59,11 @@ async function joinaudience() {
   if (!auth.currentUser) return;
 
   const debateRef = doc(db, "debates", id);
+  const debateSnap = await getDoc(debateRef);
+
+  if (debateSnap.exists() && debateSnap.data().ended) {
+    return; // debate already closed — don't alert here, just don't add as viewer
+  }
 
   await updateDoc(debateRef, {
     viewers: arrayUnion(auth.currentUser.email),
@@ -73,9 +80,17 @@ async function joinaudience() {
   }, []);
 
   useEffect(()=>{
-  if(!activeSpeaker) return ;
+    if (
+      !activeSpeaker ||
+      activeSpeaker === "" ||
+      activeSpeaker !== auth.currentUser?.email
+    ){
+      return;
+    }
 
-  if(SpeakerTimeLeft===0){
+  if(SpeakerTimeLeft<=0){
+    alert("your speaking time is completed");
+    setArgument("");
     approveSpeaker();
     return;
   }
@@ -89,44 +104,52 @@ async function joinaudience() {
 
 
  useEffect(() => {
-  if (!debate || !debate.endTime) return;
+
+  if (!debate?.endTime) return;
+
+  if (debate.ended) {
+    setDebateTimeLeft("Debate Closed");
+    setDebateEnded(true);
+    return;
+  }
 
   const end = debate.endTime.toDate().getTime();
 
-  const interval = setInterval(() => {
+  const timer = setInterval(async () => {
 
     const now = Date.now();
 
     const distance = end - now;
 
     if (distance <= 0) {
+
+      clearInterval(timer);
+
       setDebateTimeLeft("Debate Closed");
+
       setDebateEnded(true);
-      clearInterval(interval);
+
+      alert("⏰ The debate time is over. This debate is now closed — no one can enter.");
+
+       await updateDoc(doc(db, "debates", id), {
+        ended: true,
+      });
+
       return;
     }
 
-    const hours = Math.floor(distance / (1000 * 60 * 60));
-
-    const minutes = Math.floor(
-      (distance % (1000 * 60 * 60)) /
-      (1000 * 60)
-    );
-
-    const seconds = Math.floor(
-      (distance % (1000 * 60)) /
-      1000
-    );
+    const minutes = Math.floor(distance / 1000 / 60);
+    const seconds = Math.floor((distance / 1000) % 60);
 
     setDebateTimeLeft(
-      `${hours}h ${minutes}m ${seconds}s`
+      `${String(minutes).padStart(2,"0")}:${String(seconds).padStart(2,"0")}`
     );
 
-  }, 1000);
+  },1000);
 
-  return () => clearInterval(interval);
+  return ()=>clearInterval(timer);
 
-}, [debate]);
+},[debate,id]);
 
 
 useEffect(() => {
@@ -158,11 +181,10 @@ useEffect(() => {
 }, [id]);
 
 
-  // Fetch Debate
   const fetchDebate = async () => {
     try {
       const docRef = doc(db, "debates", id);
-      
+
       onSnapshot(docRef,(snapshot)=>{
     if(snapshot.exists()){
 
@@ -172,6 +194,7 @@ useEffect(() => {
         };
 
         setDebate(data);
+        setDebateEnded(data.ended || false);
         setTeamVote({
           support: data.supportVotes || 0,
           oppose: data.opposeVotes || 0,
@@ -181,15 +204,22 @@ useEffect(() => {
         setSpeakerQueue(data.speakerQueue || []);
         setActiveSpeaker(data.activeSpeaker || "");
         setViewCount(data.viewers?.length ||0);
+
+        if (data.activeSpeaker && data.speakerStartTime) {
+          const startedAt = data.speakerStartTime.toDate().getTime();
+          const elapsedSeconds = Math.floor((Date.now() - startedAt) / 1000);
+          setSpeakerTimeLeft(Math.max(120 - elapsedSeconds, 0));
+        } else {
+          setSpeakerTimeLeft(0);
+        }
     }
 });
-      
+
     } catch (error) {
       console.log(error);
     }
   };
 
-  // Fetch Arguments
   const fetchArguments =  () => {
         const q = query(
         collection(db, "arguments"),
@@ -222,16 +252,14 @@ useEffect(() => {
     })
   };
 
-  // Submit Argument
   const submitArgument = async () => {
   const user = auth.currentUser;
 
-  if(!activeSpeaker){
-    alert("No active speaker");
-    return;
+  if(activeSpeaker !== auth.currentUser.email){
+    alert("wait untill the moderator approves your turn")
   }
 
-  if(speakerTimeLeft<=0){
+  if(SpeakerTimeLeft<=0){
     alert("Your speaking Time is over");
     return;
   }
@@ -251,7 +279,7 @@ useEffect(() => {
     return;
   }
 
-  
+
     if (!argument) {
       alert("Please enter an argument");
       return;
@@ -330,7 +358,6 @@ useEffect(() => {
     }
   };
 
-  // Upvote / Downvote
 const handleVote = async (arg, type) => {
 
   console.log("Vote button clicked");
@@ -406,7 +433,6 @@ const argumentReaction=async(argId,reaction)=>{
     console.log(error);
   }
 }
-  // Calculate Winner
   const calculateWinner = () => {
     let supportVotes = 0;
     let opposeVotes = 0;
@@ -422,22 +448,28 @@ const argumentReaction=async(argId,reaction)=>{
     });
 
     if (supportVotes > opposeVotes) {
-       
+
  return "Support";
     }
 
     if (opposeVotes > supportVotes) {
-      
+
   return "Oppose";
     }
 
     return "Tie";
 
-    
+
   };
 
   if (!debate) {
-    return <h2>Loading...</h2>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#07070d] text-white">
+        <h2 className="text-2xl font-semibold bg-gradient-to-r from-fuchsia-300 to-purple-300 bg-clip-text text-transparent">
+          Loading...
+        </h2>
+      </div>
+    );
   }
 
   const sendMessage=async()=>{
@@ -486,7 +518,7 @@ const argumentReaction=async(argId,reaction)=>{
       return;
     }
 
-    
+
 
     try{
       await addDoc(collection(db,"chats"),{
@@ -499,13 +531,13 @@ const argumentReaction=async(argId,reaction)=>{
       alert("Message sent successfully")
       setMessage("");
 
-      
+
     }catch(error){
       console.log(error);
     }
   };
 
- 
+
  const deleteArgument = async(arg)=>{
 
   try{
@@ -586,7 +618,7 @@ const chooseSide = async (selectedSide) => {
   console.log("chooseSide called");
 
 
-  if (!auth.currentUser){ 
+  if (!auth.currentUser){
     console.log("No user logged in");
     return};
 
@@ -627,6 +659,15 @@ const chooseSide = async (selectedSide) => {
 
 };
 
+const joinLiveDebate= ()=>{
+
+  if(!side){
+    alert("please choose your side");
+    return;
+  }
+  setShowVideoCall(true);
+};
+
 
 const submitReply = async(argumentId)=>{
 
@@ -641,7 +682,7 @@ const submitReply = async(argumentId)=>{
     alert("This debate has ended.");
     return;
   }
-  
+
   if(!replyText){
     alert("Enter the reply");
     return;
@@ -688,7 +729,7 @@ const submitReply = async(argumentId)=>{
     console.log(error);
   }
 
-  
+
 };
 
 const totalReplies=replies.length;
@@ -733,7 +774,7 @@ const handleShare = async()=>{
 
     alert("Link copid to clipboard")
   }
-  
+
   }catch(error){
     console.log(error);
   }
@@ -741,11 +782,11 @@ const handleShare = async()=>{
 
 const announceResult=async()=>{
  const winner=calculateWinner();
- 
+
   const user=auth.currentUser;
-  
+
   if(!user)return;
-  
+
   await addDoc(
     collection(db, "notifications"),
     {
@@ -780,44 +821,57 @@ const RaiseHand = async () => {
 
   const moveToNextSpeaker = async () => {
 
-  if (speakerQueue.length === 0) {
-    setActiveSpeaker("");
-    alert("Debate Finished");
-    return;
-  }
+    if (speakerQueue.length === 0) {
 
-  const nextSpeaker = speakerQueue[0];
+        setActiveSpeaker("");
 
-  const debateRef = doc(db, "debates", id);
+        return;
+    }
 
-  await updateDoc(debateRef, {
-    activeSpeaker: nextSpeaker,
-    speakerQueue: speakerQueue.slice(1),
-  });
+    const debateRef = doc(db,"debates",id);
 
-  setActiveSpeaker(nextSpeaker);
-  setSpeakerQueue(speakerQueue.slice(1));
-  setSpeakerTimeLeft(50);
+    const nextSpeaker = speakerQueue[0];
+
+    const updates = {
+        activeSpeaker: nextSpeaker,
+        speakerQueue: speakerQueue.slice(1),
+        speakerStartTime: new Date(),
+    };
+
+    if (!debate.started) {
+        updates.started = true;
+        updates.endTime = new Date(Date.now() + 20 * 60 * 1000);
+    }
+
+    await updateDoc(debateRef, updates);
+
+    setActiveSpeaker(nextSpeaker);
+
+    setSpeakerQueue(speakerQueue.slice(1));
+
+    setSpeakerTimeLeft(120);
 };
 
 const approveSpeaker = async () => {
 
   await moveToNextSpeaker();
-
-  alert("Next speaker approved");
 };
 
 const voteWinner=async(team)=>{
+
+  if(!debate?.ended){
+    alert("voting starts only after the debate is completed");
+    return;
+  }
   try{
 
-    if(!auth.currentUser) 
+    if(!auth.currentUser)
       {
         alert("Debate is still running.")
         return;}
 
     const email = auth.currentUser.email;
-   
-    //check whether this user has already voted
+
     const q=query(collection(db,"winnerVotes"),
   where("debateId","==",id),
   where("userEmail","==",email));
@@ -829,8 +883,7 @@ const voteWinner=async(team)=>{
     return;
   }
 
-   
-  //save the users vote
+
   await addDoc(collection(db,"winnerVotes"),{
     debateId:id,
     userEmail:email,
@@ -838,7 +891,6 @@ const voteWinner=async(team)=>{
     createdAt: new Date(),
   });
 
-  //update the debates vote count
     const debateRef=(doc(db,"debates",id));
 
     if(team==="support"){
@@ -867,7 +919,7 @@ const voteWinner=async(team)=>{
 
 const getWinner = ()=>{
   if(
-    teamvote.support>teamvote.oppose && 
+    teamvote.support>teamvote.oppose &&
     teamvote.support>teamvote.neutral
   ){
     return "Team Support";
@@ -893,7 +945,7 @@ const chooseNextSpeaker=async()=>{
   const queueQuery=query(
     collection(db,"speakerQueue"),
     where("debateId","==",id),
-    orderby("raisedAt"),
+    orderBy("raisedAt"),
     limit(1)
   );
 
@@ -920,439 +972,440 @@ const autoApproveNextSpeaker=async()=>{
 }
 
 
+const inputClass = "w-full p-4 rounded-xl bg-white/5 backdrop-blur border border-white/10 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/50 focus:border-fuchsia-500/40 transition mb-4";
+const primaryBtn = "bg-gradient-to-r from-purple-600 via-fuchsia-500 to-blue-500 hover:from-purple-500 hover:via-fuchsia-400 hover:to-blue-400 text-white px-6 py-3 rounded-xl font-semibold shadow-[0_10px_30px_-8px_rgba(217,70,239,0.6)] transition-all";
+const secondaryBtn = "bg-white/10 hover:bg-white/15 border border-white/15 text-white px-4 py-2 rounded-xl backdrop-blur transition-all";
+
+
 
   return (
-    <div className="min-h-screen bg-brand-bg text-brand-navy p-8">
-
+    <div className="min-h-screen bg-[radial-gradient(...)] bg-[#07070d] text-white px-4 py-6 sm:px-6 lg:px-8">
       <PageNavigator/>
-      <h1 className="text-5xl font-bold text-center text-brand-purple mb-8">
-        Debate Room</h1>
 
-      <div className="mt-4 mb-6">
-        <h2 className="text-2xl font-bold text-brand-navy">
-           👥 {viewCount} Watching
-        </h2>
-      </div>
+      <div className="max-w-5xl mx-auto w-full">
 
-      <h2 className="text-3xl font-bold text-brand-navy mb-3"
-      >{debate.title}</h2>
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-center mb-8 bg-gradient-to-r from-purple-400 via-fuchsia-400 to-blue-400 bg-clip-text text-transparent">
+          Debate Room
+        </h1>
+
+        <div className="mt-4 mb-6">
+          <h2 className="text-xl font-semibold text-white/80">
+             👥 {viewCount} Watching
+          </h2>
+        </div>
+
+         <h3 className="mb-4 text-xl font-semibold text-white/90">Choose Your Side</h3>
+        <div className="flex flex-col sm:flex-row justify-center gap-4 mt-4 mb-6">
+          <button
+            onClick={() => chooseSide("Support")}
+           className={`${primaryBtn} w-full sm:w-auto`}
+          >
+            Support
+          </button>
+
+          <button
+            onClick={() => chooseSide("Oppose")}
+            className={`${primaryBtn} w-full sm:w-auto`}
+          >
+            Oppose
+          </button>
+        </div>
+
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 mb-6 shadow-[0_20px_60px_-20px_rgba(168,85,247,0.35)]">
+          <h2 className="text-3xl font-bold mb-3 bg-gradient-to-r from-fuchsia-300 to-purple-300 bg-clip-text text-transparent">
+            {debate.title}
+          </h2>
+          <p className="text-white/70">{debate.description}</p>
+        </div>
+
+        {!showVideoCall ? (
+          <div className="flex flex-wrap justify-center gap-6 mt-8">
+            <button
+                onClick={joinLiveDebate}
+                className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white w-full sm:w-auto px-8 py-3 rounded-xl font-semibold shadow-[0_10px_30px_-8px_rgba(16,185,129,0.6)] transition-all"
+            >
+                🎥 Join Live Debate
+            </button>
 
 
-      <p className="text-brand-text mb-6"
-      >{debate.description}</p>
+          </div>
+        ) : (
+          <VideoCall />
+        )}
 
-      {!joinCall ? (
-    <div className="flex justify-center my-8">
 
-        <button
-            onClick={() => setJoinCall(true)}
-            className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-semibold"
-        >
-            🎥 Join Live Debate
-        </button>
+        <p className="text-white/80">
+          <strong className="text-fuchsia-300">Your Side:</strong> {side}
+        </p>
 
-        <button
-          onClick={joinCall}
-          className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl"
-        >
-          Join Existing Call
-        </button>
-
-    </div>
-) : (
-    <VideoCall />
-)}
-
-      <h3 className="mb-4">
-        Choose Your Side</h3>
-      <div className="flex justify-center gap-6 mt-4 mb-6">
-
-      <button
-        onClick={() => chooseSide("Support")}
-        className="bg-brand-purple hover:bg-brand-purple-dark text-white px-6 py-3 rounded-lg font-semibold"
-      >
-        Support
-      </button>
-
-      <button
-        onClick={() => chooseSide("Oppose")}
-        className="bg-brand-purple hover:bg-brand-purple-dark text-white px-6 py-3 rounded-lg font-semibold"
-      >
-        Oppose
-      </button>
-      </div>
-
-      <p>
-        <strong>Your Side:</strong>{" "}
-        {side}
-      </p>
-
-      <div className="bg-brand-bg border border-brand-border rounded-lg p-4 text-brand-navy mb-8">
-         <h3 className="font-bold text-xl">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 sm:p-6 mb-8 mt-6 shadow-lg">
+          <h3 className="font-bold text-xl bg-gradient-to-r from-fuchsia-300 to-purple-300 bg-clip-text text-transparent">
             👥 Participants
           </h3>
 
-          <p className="mt-2 text-green-400 font-semibold">
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mt-6 text-center">
+            <h2 className="text-2xl font-bold">
+              🕒 Debate Time Remaining
+            </h2>
+
+            <p className="text-4xl font-bold text-fuchsia-300 mt-3">
+              {debate.endTime ? debateTimeLeft : "Not Started Yet"}
+            </p>
+          </div>
+
+          <p className="mt-2 text-emerald-300 font-semibold">
             Support: {supportCount}
           </p>
 
-          <p className="text-red-400 font-semibold">
+          <p className="text-rose-300 font-semibold">
             Oppose: {opposeCount}
           </p>
-      </div>
-
-      {activeSpeaker === auth.currentUser?.email ? (
-
-  <>
-
-    <div className="text-center mt-5">
-
-        <h3 className="font-bold text-xl mt-5">
-              ⏰ Time Remaining
-            </h3>
-            <p>timeLeft:{SpeakerTimeLeft}</p>
-            <p className="text-3xl font-bold text-red-400">
-              {String(Math.floor(SpeakerTimeLeft/60)).padStart(2,"0")}:
-              {String(SpeakerTimeLeft%60).padStart(2,"0")}
-            </p>
-
-            {speakerQueue.length===0?(
-              <p className="text-brand-text">No user in queue</p>
-            ):(
-              speakerQueue.map((email,index)=>(
-                <p key={index}>
-                  {index+1}.{email}
-                </p>
-              ))
-            )}
-
         </div>
-    <textarea
-      disabled={!isActiveSpeaker}
-      rows="5"
-      className="w-full p-4 rounded-xl bg-brand-bg border border-brand-input-border text-brand-navy mb-4"
-      placeholder="Enter your argument..."
-      value={argument}
-      onChange={(e) => setArgument(e.target.value)}
-    />
 
-    <div className="text-center mt-5">
-      <button
-        onClick={submitArgument}
-        className="bg-brand-purple hover:bg-brand-purple-dark text-white px-6 py-3 rounded-lg font-semibold"
-      >
-        Post Argument
-      </button>
-    </div>
-  </>
+        {activeSpeaker === auth.currentUser?.email ? (
 
-) : (
-
-  <div className="bg-yellow-950/40 border border-yellow-600/50 rounded-lg p-4 mt-5">
-    <p className="text-yellow-300 font-semibold">
-      ⏳ Wait until you become the active speaker to post your argument.
-    </p>
-  </div>
-
-)}
-
-      <h2>Chat Room</h2>
-
-       {messages.length === 0 ? (
-        <p>NO MESSAGES YET</p>
-       ) : (
-        messages.map((msg) => (
-          <div
-            key={msg.id}
-           
-            className="bg-purple-950/30 border border-brand-border rounded-xl p-4 mb-3"
-           
-          >
-            <strong>{msg.userEmail}</strong>
-            <p>{msg.message}</p>
-          </div>
-        ))
-       )}
-
-      <textarea
-      placeholder="Type a message"
-      className="w-full p-4 rounded-xl bg-brand-bg border border-brand-input-border text-brand-navy mb-4"
-      value={message}
-      onChange={(e)=>setMessage(e.target.value)}/>
-
-          <button
-              onClick={sendMessage}
-              className="bg-brand-purple hover:bg-brand-purple-dark text-white px-5 py-2 rounded-lg mb-8">
-                Send
-            </button>
-
-
-          
-
-      
-      <h2>Information</h2>
-
-      {argumentsList.length === 0 ? (
-        <p>No arguments yet.</p>
-      ) : (
-        argumentsList.map((arg) => (
-          <div
-            key={arg.id}
-            className="bg-brand-bg border border-brand-border rounded-2xl shadow-xl p-6 mb-6 text-brand-navy"
-          >
-            <p>
-              <strong>Posted By:</strong>{arg.userEmail}
-            </p>
-            <p>
-              <strong>Side:</strong>{" "}
-              {arg.side}
-            </p>
-
-            {editingId === arg.id ? (
           <>
-            <textarea
-              value={editedText}
-              onChange={(e) =>
-                setEditedText(e.target.value)
-              }
-            />
-            <div className="flex justify-center mt-4">
+            <div className="text-center mt-5 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 sm:p-6 mb-6">
 
-            <button 
-            onClick={()=>updateArgument(arg.id)}
-            className="bg-brand-purple hover:bg-brand-purple-dark text-white px-5 py-2 rounded-lg">
-              Save
-            </button>
-            </div>    
+              <h3 className="font-bold text-xl mt-2 text-white/90">
+                ⏰ Time Remaining
+              </h3>
+              <p className="text-white/60">timeLeft:{SpeakerTimeLeft}</p>
+              <p className="text-4xl font-extrabold mt-2 bg-gradient-to-r from-rose-400 to-fuchsia-400 bg-clip-text text-transparent">
+                {String(Math.floor(SpeakerTimeLeft/60)).padStart(2,"0")}:
+                {String(SpeakerTimeLeft%60).padStart(2,"0")}
+              </p>
+
+              <div className="mt-4">
+                {speakerQueue.length===0?(
+                  <p className="text-white/60">No user in queue</p>
+                ):(
+                  speakerQueue.map((email,index)=>(
+                    <p key={index} className="text-white/70">
+                      {index+1}.{email}
+                    </p>
+                  ))
+                )}
+              </div>
+
+            </div>
+
+            <textarea              
+              rows={4}
+              className={inputClass}
+              placeholder="Enter your argument..."
+              value={argument}
+              onChange={(e) => setArgument(e.target.value)}
+            />
+
+            <div className="text-center mt-5">
+              <button
+                onClick={submitArgument}
+                className={`${primaryBtn} w-full sm:w-auto`}
+              >
+                Post Argument
+              </button>
+            </div>
           </>
+
         ) : (
-          <p>{arg.argument}</p>
+
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-4 mt-5 backdrop-blur">
+            <p className="text-yellow-200 font-semibold">
+              ⏳ Wait until you become the active speaker to post your argument.
+            </p>
+          </div>
+
         )}
 
-            <p>
-              <strong>Votes:</strong>{" "}
-              {arg.votes||0}
-            </p>
+        <h2 className="text-2xl font-bold mt-10 mb-4 bg-gradient-to-r from-fuchsia-300 to-blue-300 bg-clip-text text-transparent">Chat Room</h2>
 
-
-            <h4>Replies</h4>
-
-            {replies.filter(
-              (reply)=>reply.argumentId === arg.id
-            )
-            .map((reply)=>(
-              <div
-              key={reply.id}
-              style={{
-                marginLeft:"20px",
-                padding:"5px",
-              }}>
-                {reply.reply}
-              </div>
-            ))}
-
-             <div className="flex justify-center gap-4 mt-4 mb-5">
-              <button 
-              onClick={()=>argumentReaction(arg.id,"like")}
-              className="bg-brand-secondary hover:bg-brand-secondary-hover text-white px-4 py-2 rounded-lg">
-                👍{arg.like||0}
-              </button>
-              <button 
-              onClick={()=>argumentReaction(arg.id,"love")}
-              className="bg-brand-secondary hover:bg-brand-secondary-hover text-white px-4 py-2 rounded-lg">
-                ❤️{arg.love||0}
-              </button>
-              <button 
-              onClick={()=>argumentReaction(arg.id,"laugh")}
-              className="bg-brand-secondary hover:bg-brand-secondary-hover text-white px-4 py-2 rounded-lg">
-                😂{arg.laugh||0}
-              </button>
-              <button 
-              onClick={()=>argumentReaction(arg.id,"wow")}
-              className="bg-brand-secondary hover:bg-brand-secondary-hover text-white px-4 py-2 rounded-lg">
-                🤯{arg.wow||0}
-              </button>
-              <button 
-              onClick={()=>argumentReaction(arg.id,"clap")}
-              className="bg-brand-secondary hover:bg-brand-secondary-hover text-white px-4 py-2 rounded-lg">
-                👏{arg.clap||0}
-              </button>
-
-            </div>
-
-            <div className="flex justify-center gap-4 mt-4 mb-5">
-
-            <button
-              onClick={() =>
-                handleVote(arg, "up")
-              }
-              className="bg-brand-purple-medium hover:bg-brand-purple-medium-hover text-white px-4 py-2 rounded-lg mr-2"
+        {messages.length === 0 ? (
+          <p className="text-white/60">NO MESSAGES YET</p>
+        ) : (
+          messages.map((msg) => (
+            <div
+              key={msg.id}
+              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 mb-3 shadow-lg"
             >
-              👍 Upvote
-            </button>
+              <strong className="text-fuchsia-300">{msg.userEmail}</strong>
+              <p className="text-white/85 mt-1">{msg.message}</p>
+            </div>
+          ))
+        )}
 
-            <button
-              onClick={() =>
-                handleVote(arg, "down")
-              }
-              className="bg-brand-purple-medium hover:bg-brand-purple-medium-hover text-white px-4 py-2 rounded-lg"
+        <textarea
+          placeholder="Type a message"
+          className={inputClass}
+          value={message}
+          onChange={(e)=>setMessage(e.target.value)}/>
+
+        <button
+            onClick={sendMessage}
+            className={`${primaryBtn} w-full sm:w-auto mb-8`}>
+          Send
+        </button>
+
+         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-6">
+          <button
+            onClick={RaiseHand}
+            className={`${primaryBtn} w-full sm:w-auto`}
             >
-              👎 Downvote
-            </button>
-            </div>
+            🤚 Raise Hand
+          </button>
 
-            <div className="flex flex-col items-center gap-3 mt-5">
+          <button onClick={approveSpeaker}
+            className={`${secondaryBtn} w-full sm:w-auto`}>
+            Approved the Next Speaker
+          </button>
 
-            <button
-            className="bg-brand-purple-medium hover:bg-brand-purple-medium-hover text-white px-4 py-2 rounded-lg mx-2"
-            onClick={()=>{
-              setEditingId(arg.id);
-              setEditiedText(arg.argument);
-            }}>EDIT</button>
-
-
-            <button
-             className="bg-brand-purple-medium hover:bg-brand-purple-medium-hover text-white px-4 py-2 rounded-lg mx-2" 
-            onClick={()=>deleteArgument(arg)}>
-              Delete Argument
-            </button>
-
-            {/* <button
-            onClick={deleteDebate}
-            className="bg-brand-purple-medium hover:bg-brand-purple-medium-hover text-white px-5 py-2 rounded-lg"
-          >
-            Delete Debate
-          </button> */}
-            </div>
-
-            
-
-            <textarea 
-            className="w-full bg-brand-bg border border-brand-input-border rounded-lg p-3 mt-4"
-            placeholder="Write a reply...."
-            value={replyTexts[arg.id]||""}
-            onChange={(e)=>setReplyTexts({
-              ...replyTexts,
-              [arg.id]:e.target.value,
-            })}/>
-
-            <button onClick={()=>submitReply(arg.id)}
-            className="bg-brand-purple hover:bg-brand-purple-dark text-white px-4 py-2 rounded-lg mt-2">
-              REPLY</button>
-          
-          <h2>Achievements</h2>
-
-            <p>
-              <strong>Badge:</strong> {getAchievement()}
-            </p>
-
-            <p>
-              <strong>Arguments Posted:</strong> {totalArguments}
-            </p>
-
-            <p>
-              <strong>Votes Received:</strong> {totalVotesReceived}
-            </p>
-
-            <button 
-            className="bg-brand-purple hover:bg-brand-purple-dark text-white px-5 py-2 rounded-lg mt-4"
-            onClick={handleShare}>
-              SHARE DEBATE
-            </button>
-          </div>
-        ))
-        
-      )}
-
-            <button
-              onClick={RaiseHand}
-              className="bg-brand-purple hover:bg-brand-purple-dark text-white px-6 py-3 rounded-lg font-semibold"
-              >
-              🤚 Raise Hand
-              </button>
-
-            <h3 className="mt-4"> 🎤 Active Speaker:
+          <h3 className="text-white/85">
+            🎤 Active Speaker:{" "}
+            <span className="text-fuchsia-300 font-semibold">
               {activeSpeaker||"None"}
-            </h3>
+            </span>
+          </h3>
 
-            <button onClick={approveSpeaker}
-             className="bg-brand-purple hover:bg-brand-purple-dark text-white px-4 py-2 rounded-lg mx-2">
-              Approved the Next Speaker
-            </button>
 
-            {debateEnded && (
-              <div className=" bg-brand-bg border border-brand-border rounded-xl p-6 mt-6">
-               <div className="text-brand-navy text-3xl font-bold mb-5">
-                🏆 Vote Winner
-              </div>
-               
-               <div className="flex justify-center gap-4 mt-5">
-                <button
-                onClick={()=>voteWinner("support")}
-                className="bg-brand-purple hover:bg-brand-purple-dark text-white px-6 py-3 rounded-lg">
-                  Team support ({teamvote.support})
-                </button>
+        </div>
 
-                <button
-                onClick={()=>voteWinner("oppose")}
-                className="bg-brand-purple hover:bg-brand-purple-dark text-white px-6 py-3 rounded-lg">
-                  Team Oppose ({teamvote.oppose})
-                </button>
 
-                <button
-                onClick={()=>voteWinner("neutral")}
-                className="bg-brand-purple hover:bg-brand-purple-dark text-white px-6 py-3 rounded-lg">
-                  Neutral ({teamvote.neutral})
-                </button>
-              </div>
-              </div>
-            )}
+        <h2 className="text-2xl font-bold mt-4 mb-4 bg-gradient-to-r from-fuchsia-300 to-blue-300 bg-clip-text text-transparent">Information</h2>
 
-            {debateEnded && (
+        {argumentsList.length === 0 ? (
+          <p className="text-white/60">No arguments yet.</p>
+        ) : (
+          argumentsList.map((arg) => (
+            <div
+              key={arg.id}
+              className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_20px_60px_-20px_rgba(168,85,247,0.35)] p-4 sm:p-6 mb-6 text-white"
+            >
+              <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-fuchsia-500/10 blur-3xl pointer-events-none" />
 
-            <div className="bg-yellow-950/40 border border-yellow-600/50 rounded-xl py-3 px-5 mt-6 mb-8">
-              <div className="text-3xl font-bold text-brand-navy">
-                🏆 Winner
-              </div>
-
-              <p className="text-2xl font-bold text-green-500 mt-3">
-                {
-                  teamvote.support+teamvote.oppose+teamvote.neutral === 0
-                  ? "No votes yet": getWinner()}
+              <p className="relative">
+                <strong className="text-fuchsia-300">Posted By:</strong> {arg.userEmail}
               </p>
+              <p className="relative">
+                <strong className="text-fuchsia-300">Side:</strong>{" "}
+                {arg.side}
+              </p>
+
+              {editingId === arg.id ? (
+                <>
+                  <textarea
+                    value={editedText}
+                    onChange={(e) =>
+                      setEditedText(e.target.value)
+                    }
+                    className={`${inputClass} mt-3`}
+                  />
+                  <div className="flex justify-center mt-4">
+                    <button
+                      onClick={()=>updateArgument(arg.id)}
+                      className={`${primaryBtn} w-full sm:w-auto`}>
+                      Save
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p className="relative text-white/85 mt-2">{arg.argument}</p>
+              )}
+
+              <p className="relative mt-3">
+                <strong className="text-fuchsia-300">Votes:</strong>{" "}
+                {arg.votes||0}
+              </p>
+
+
+              <h4 className="relative mt-4 font-semibold text-white/90">Replies</h4>
+
+              {replies.filter(
+                (reply)=>reply.argumentId === arg.id
+              )
+              .map((reply)=>(
+                <div
+                key={reply.id}
+                className="relative ml-5 mt-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white/80"
+                >
+                  {reply.reply}
+                </div>
+              ))}
+
+              <div className="relative grid grid-cols-2 sm:flex sm:flex-wrap justify-center gap-3 mt-6">
+                <button
+                onClick={()=>argumentReaction(arg.id,"like")}
+                className={`${secondaryBtn} w-full sm:w-auto`}>
+                  👍{arg.like||0}
+                </button>
+                <button
+                onClick={()=>argumentReaction(arg.id,"love")}
+                className={`${secondaryBtn} w-full sm:w-auto`}>
+                  ❤️{arg.love||0}
+                </button>
+                <button
+                onClick={()=>argumentReaction(arg.id,"laugh")}
+                className={`${secondaryBtn} w-full sm:w-auto`}>
+                  😂{arg.laugh||0}
+                </button>
+                <button
+                onClick={()=>argumentReaction(arg.id,"wow")}
+                className={`${secondaryBtn} w-full sm:w-auto`}>
+                  🤯{arg.wow||0}
+                </button>
+                <button
+                onClick={()=>argumentReaction(arg.id,"clap")}
+               className={`${secondaryBtn} w-full sm:w-auto`}>
+                  👏{arg.clap||0}
+                </button>
+              </div>
+
+              <div className="relative flex flex-col sm:flex-row justify-center gap-4 mt-6">
+                <button
+                  onClick={() => handleVote(arg, "up")}
+                  className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white px-4 py-2 rounded-xl shadow-[0_8px_25px_-8px_rgba(16,185,129,0.6)] transition-all"
+                >
+                  👍 Upvote
+                </button>
+
+                <button
+                  onClick={() => handleVote(arg, "down")}
+                  className="bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-400 hover:to-red-400 text-white px-4 py-2 rounded-xl shadow-[0_8px_25px_-8px_rgba(244,63,94,0.6)] transition-all"
+                >
+                  👎 Downvote
+                </button>
+              </div>
+
+              <div className="relative flex flex-col items-center gap-3 mt-5">
+                <button
+                  className={`${secondaryBtn} w-full sm:w-auto`}
+                  onClick={()=>{
+                    setEditingId(arg.id);
+                    setEditiedText(arg.argument);
+                  }}>EDIT</button>
+
+                <button
+                  className="bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-400 hover:to-red-400 text-white px-4 py-2 rounded-xl shadow-[0_8px_25px_-8px_rgba(244,63,94,0.6)] transition-all"
+                  onClick={()=>deleteArgument(arg)}>
+                  Delete Argument
+                </button>
+
+                {/* <button
+                onClick={deleteDebate}
+                className="bg-brand-purple-medium hover:bg-brand-purple-medium-hover text-white px-5 py-2 rounded-lg"
+              >
+                Delete Debate
+              </button> */}
+              </div>
+
+              <textarea
+                className={`${inputClass} mt-4`}
+                placeholder="Write a reply...."
+                value={replyTexts[arg.id]||""}
+                onChange={(e)=>setReplyTexts({
+                  ...replyTexts,
+                  [arg.id]:e.target.value,
+                })}/>
+
+              <button onClick={()=>submitReply(arg.id)}
+              className={`${primaryBtn} w-full sm:w-auto`}>
+                REPLY
+              </button>
+
+              <h2 className="relative mt-6 text-xl font-bold bg-gradient-to-r from-fuchsia-300 to-blue-300 bg-clip-text text-transparent">Achievements</h2>
+
+              <p className="relative text-white/85">
+                <strong className="text-fuchsia-300">Badge:</strong> {getAchievement()}
+              </p>
+
+              <p className="relative text-white/85">
+                <strong className="text-fuchsia-300">Arguments Posted:</strong> {totalArguments}
+              </p>
+
+              <p className="relative text-white/85">
+                <strong className="text-fuchsia-300">Votes Received:</strong> {totalVotesReceived}
+              </p>
+
+              <button
+                className={`${primaryBtn} mt-4`}
+                onClick={handleShare}>
+                SHARE DEBATE
+              </button>
             </div>
-            )}
+          ))
 
-      
-      <div className="bg-purple-950/30 border border-brand-border rounded-xl p-6 mb-10">
-      <h2>Debate statistics</h2>
+        )}
 
-      <p>Total Arguments:{argumentsList.length}</p>
-      <p> Total Votes:{totalVotes}</p>
-      <p>Total Replies:{totalReplies}</p>
-      <p>Total Messages:{totalMessages}</p>
+
+
+        {debateEnded && (
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 mt-6">
+            <div className="text-3xl font-bold mb-5 bg-gradient-to-r from-yellow-300 to-fuchsia-300 bg-clip-text text-transparent">
+              🏆 Vote Winner
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-4 mt-5">
+              <button
+              onClick={()=>voteWinner("support")}
+              className={`${primaryBtn} min-w-[180px]`}>
+                Team support ({teamvote.support})
+              </button>
+
+              <button
+              onClick={()=>voteWinner("oppose")}
+              className={`${primaryBtn} min-w-[180px]`}>
+                Team Oppose ({teamvote.oppose})
+              </button>
+
+              <button
+              onClick={()=>voteWinner("neutral")}
+              className={`${primaryBtn} min-w-[180px]`}>
+                Neutral ({teamvote.neutral})
+              </button>
+            </div>
+          </div>
+        )}
+
+        {debateEnded && (teamvote.support + teamvote.oppose + teamvote.neutral > 0) && (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl py-4 px-6 mt-6 mb-8 backdrop-blur">
+            <div className="text-3xl font-bold bg-gradient-to-r from-yellow-300 to-fuchsia-300 bg-clip-text text-transparent">
+              🏆 Winner
+            </div>
+
+            <p className="text-2xl font-bold text-emerald-300 mt-3">
+              {getWinner()}
+            </p>
+          </div>
+        )}
+
+
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 sm:p-6 mb-10 mt-6 shadow-lg">
+          <h2 className="text-2xl font-bold mb-3 bg-gradient-to-r from-fuchsia-300 to-blue-300 bg-clip-text text-transparent">Debate statistics</h2>
+
+          <p className="text-white/80">Total Arguments: {argumentsList.length}</p>
+          <p className="text-white/80"> Total Votes: {totalVotes}</p>
+          <p className="text-white/80">Total Replies: {totalReplies}</p>
+          <p className="text-white/80">Total Messages: {totalMessages}</p>
+        </div>
+
+        {topArgument && (
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 mb-6">
+            <h2 className="text-2xl font-bold mb-3 bg-gradient-to-r from-yellow-300 to-fuchsia-300 bg-clip-text text-transparent">🏆Top Arguments</h2>
+
+            <p className=" text-center sm:text-left text-white/85">{topArgument.argument}</p>
+
+            <p className="mt-2">
+              <strong className="text-fuchsia-300"> Votes:{topArgument.votes}</strong>{" "}
+            </p>
+          </div>
+        )}
+
+         {debateEnded &&(
+        <h2 className="text-4xl font-extrabold text-center mt-8 bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent">
+          Winner: {calculateWinner()}
+        </h2>
+         )}
 
       </div>
-
-      {topArgument && (
-        <>
-        <h2>🏆Top Arguments</h2>
-
-        <p>{topArgument.argument}</p>
-
-        <p>
-          <strong> Votes:{topArgument.votes}</strong>{" "}
-
-          </p>
-        </>
-      )}
-
-
-      <h2 className="text-4xl text-green-400 font-bold text-center mt-8">
-        Winner: {calculateWinner()}
-      </h2>
-
-      <h2> ⌛ Debate ends in -{debateTimeLeft}</h2>
     </div>
   );
 }

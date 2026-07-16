@@ -1,3 +1,5 @@
+//Profile.jsx
+
 import { useEffect, useState } from "react";
 import { getAuth } from "firebase/auth";
 import {collection,getDocs,query,where,doc,getDoc} from "firebase/firestore";
@@ -34,7 +36,6 @@ function Profile() {
         setUsername(userDoc.data().username || "");
       }
 
-    // Total Debates Created
     const debatesQuery = query(
       collection(db, "debates"),
       where("userEmail", "==", currentUser.email)
@@ -43,7 +44,6 @@ function Profile() {
     const debatesSnap = await getDocs(debatesQuery);
     setDebatesCreated(debatesSnap.size);
 
-    // Total Arguments Posted
     const argumentsQuery = query(
       collection(db, "arguments"),
       where("userEmail", "==", currentUser.email)
@@ -71,118 +71,85 @@ function Profile() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-brand-bg">
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_rgba(139,92,246,0.15),_transparent_60%),radial-gradient(ellipse_at_bottom,_rgba(59,130,246,0.12),_transparent_60%)] bg-[#07070d] text-white">
 
       <PageNavigator />
 
       <div className="max-w-4xl mx-auto p-8">
 
-        <div className="bg-brand-bg border border-brand-border rounded-3xl shadow-xl overflow-hidden">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl shadow-[0_25px_80px_-20px_rgba(168,85,247,0.45)] overflow-hidden">
 
-
-          <div className="h-40 bg-brand-purple"></div>
-
-
-          <div className="flex flex-col items-center -mt-12">
-          
-          <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-white shadow-xl">
-
-           <img
-            src={
-              profileImage ||
-              userData?.photoURL ||
-              "https://ui-avatars.com/api/?name=Rishmitha&background=7C3AED&color=fff"
-            }
-            alt="Profile"
-            className="w-32 h-32 rounded-full border-4 border-brand-bg shadow-lg"
-          />
+          <div className="h-48 bg-gradient-to-br from-purple-600 via-fuchsia-500 to-blue-500 relative">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,204,112,0.35),transparent_60%)]" />
           </div>
 
-            <h2 className="text-3xl font-bold text-brand-navy mt-4">
+          <div className="flex flex-col items-center -mt-16">
+
+            <div className="w-32 h-32 rounded-full border-4 border-[#0e0e18] overflow-hidden bg-white/10 shadow-[0_15px_40px_-10px_rgba(217,70,239,0.6)]">
+              <img
+                src={
+                  profileImage ||
+                  userData?.photoURL ||
+                  "https://ui-avatars.com/api/?name=Rishmitha&background=7C3AED&color=fff"
+                }
+                alt="Profile"
+                className="w-32 h-32 rounded-full border-4 border-[#0e0e18] shadow-lg object-cover"
+              />
+            </div>
+
+            <h2 className="text-3xl font-extrabold mt-4 bg-gradient-to-r from-fuchsia-300 to-purple-300 bg-clip-text text-transparent">
               {username || "Debate User"}
             </h2>
 
-            <p className="text-brand-text mt-2">
-              {userData?.email}
-            </p>
+            <p className="text-white/60 mt-2">{userData?.email}</p>
 
           </div>
-
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-8">
 
-              <div className="bg-purple-950/30 border border-brand-border rounded-2xl p-6 text-center shadow">
-
-              <h3 className="text-4xl font-bold text-brand-purple">
+            <div className="bg-gradient-to-br from-purple-600/20 to-fuchsia-500/10 border border-white/10 rounded-2xl p-6 text-center shadow-lg backdrop-blur-xl hover:scale-[1.03] transition-transform duration-300">
+              <h3 className="text-4xl font-extrabold bg-gradient-to-r from-fuchsia-300 to-purple-300 bg-clip-text text-transparent">
                 {debatesCreated}
               </h3>
-
-              <p className="text-brand-text mt-2">
-                Debates Created
-              </p>
-
+              <p className="text-white/70 mt-2">Debates Created</p>
             </div>
 
-             <div className="bg-green-950/30 border border-brand-border rounded-2xl p-6 text-center shadow">
-              <h3 className="text-4xl font-bold text-green-700">
+            <div className="bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border border-white/10 rounded-2xl p-6 text-center shadow-lg backdrop-blur-xl hover:scale-[1.03] transition-transform duration-300">
+              <h3 className="text-4xl font-extrabold bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent">
                 {argumentsPosted}
               </h3>
-
-              <p className="text-brand-text mt-2">
-                Arguments Posted
-              </p>
-
+              <p className="text-white/70 mt-2">Arguments Posted</p>
             </div>
 
-            <div className="bg-yellow-950/30 border border-brand-border rounded-2xl p-6 text-center shadow">
-
-              <h3 className="text-4xl font-bold text-yellow-600">
+            <div className="bg-gradient-to-br from-amber-400/20 to-orange-500/10 border border-white/10 rounded-2xl p-6 text-center shadow-lg backdrop-blur-xl hover:scale-[1.03] transition-transform duration-300">
+              <h3 className="text-4xl font-extrabold bg-gradient-to-r from-amber-300 to-orange-300 bg-clip-text text-transparent">
                 {totalVotes}
               </h3>
-
-              <p className="text-brand-text mt-2">
-                Total Votes
-              </p>
-
+              <p className="text-white/70 mt-2">Total Votes</p>
             </div>
 
           </div>
-
-         
 
           <div className="px-8 pb-8">
-
-            <div className="bg-purple-950/30 border border-brand-border rounded-2xl p-6 text-center">
-
-              <h2 className="text-2xl font-bold text-brand-purple">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center backdrop-blur-xl">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-fuchsia-300 to-blue-300 bg-clip-text text-transparent">
                 Achievement Badge
               </h2>
-
-              <p className="text-3xl mt-4">
-                {getBadge()}
-              </p>
-
+              <p className="text-3xl mt-4 text-white/90">{getBadge()}</p>
             </div>
-
           </div>
 
-
           <div className="flex justify-center pb-10">
-
-            <button 
-            onClick={() => navigate("/settings")}
-           className="bg-brand-secondary hover:bg-brand-secondary-hover text-white px-8 py-3 rounded-xl font-semibold transition">
-
+            <button
+              onClick={() => navigate("/settings")}
+              className="bg-gradient-to-r from-purple-600 via-fuchsia-500 to-blue-500 hover:from-purple-500 hover:via-fuchsia-400 hover:to-blue-400 text-white px-10 py-3 rounded-xl font-semibold shadow-[0_15px_40px_-10px_rgba(217,70,239,0.6)] hover:-translate-y-0.5 transition-all duration-300"
+            >
               Edit Profile
-
             </button>
-
           </div>
 
         </div>
-
       </div>
-
     </div>
   );
 }

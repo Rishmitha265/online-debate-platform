@@ -1,38 +1,34 @@
-import { useState,useEffect} from "react";
-import { createUserWithEmailAndPassword , sendEmailVerification} from "firebase/auth";
+import { useState, useEffect } from "react";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { auth, db } from "../services/firebase";
 import { doc, setDoc } from "firebase/firestore";
-import {FaEye, FaEyeSlash} from "react-icons/fa";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import PageNavigator from "../components/PageNavigator";
 
 function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword]=useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [country, setCountry] = useState("");
   const [bio, setBio] = useState("");
 
-  useEffect(()=>{
+  useEffect(() => {
     setUsername("");
     setEmail("");
     setPassword("");
     setCountry("");
     setBio("");
-  },[])
+  }, []);
 
   const handleRegister = async () => {
     try {
-      const userCredential =
-        await createUserWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await sendEmailVerification(userCredential.user);
 
-        await sendEmailVerification(userCredential.user);
-
-        alert("Registration successful!\n\n Verification has been send to your email.\n Please verify your email before logging in.");
+      alert(
+        "Registration successful!\n\n Verification has been send to your email.\n Please verify your email before logging in."
+      );
 
       const user = userCredential.user;
 
@@ -42,7 +38,7 @@ function Register() {
         country,
         bio,
         profilePic: "",
-        banned:false,
+        banned: false,
         createdAt: new Date(),
       });
 
@@ -51,35 +47,40 @@ function Register() {
       setPassword("");
       setCountry("");
       setBio("");
-
     } catch (error) {
       alert(error.message);
     }
   };
 
-   return (
-    <div className="min-h-screen bg-brand-bg flex justify-center items-center px-4">
+  return (
+    <div className="relative min-h-screen flex justify-center items-center px-4 py-10 overflow-hidden">
+      {/* Ambient orbs */}
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="animate-float-orb absolute -left-32 top-10 h-96 w-96 rounded-full bg-brand-purple opacity-25 blur-3xl" />
+        <div
+          className="animate-float-orb absolute -right-20 bottom-10 h-[26rem] w-[26rem] rounded-full bg-brand-blue opacity-20 blur-3xl"
+          style={{ animationDelay: "3s" }}
+        />
+      </div>
 
-      <div className="bg-brand-bg border border-brand-border rounded-3xl shadow-2xl w-full max-w-lg p-8">
+      <div className="glass-panel w-full max-w-lg p-8">
+        <PageNavigator />
 
-        <PageNavigator/>
-
-        <h1 className="text-brand-navy text-5xl font-bold">
-          Create Account
+        <h1 className="text-4xl font-bold mb-2">
+          <span className="text-gradient">Create Account</span>
         </h1>
+        <p className="text-brand-text mb-6 text-sm">
+          Join DebateHub and start debating in seconds.
+        </p>
 
-        <form className="space-y-5"
-        autoComplete="off">
-
+        <form className="space-y-4" autoComplete="off">
           <input
             type="text"
             autoComplete="off"
             placeholder="Username"
             value={username}
-            onChange={(e) =>
-              setUsername(e.target.value)
-            }
-            className="w-full p-3 bg-brand-bg border border-brand-input-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple"
+            onChange={(e) => setUsername(e.target.value)}
+            className="input-disco w-full p-3"
           />
 
           <input
@@ -87,26 +88,25 @@ function Register() {
             autoComplete="new-email"
             placeholder="Email Address"
             value={email}
-            onChange={(e) =>
-              setEmail(e.target.value)
-            }
-            className="w-full p-3 bg-brand-bg border border-brand-input-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple"
+            onChange={(e) => setEmail(e.target.value)}
+            className="input-disco w-full p-3"
           />
 
-          <div className="relative w-full mb-6">
+          <div className="relative w-full">
             <input
-            type={showPassword ? "text" : "password"}
-            autoComplete="new-password"
-            placeholder="Enter the password"
-            value={password}
-            onChange={(e)=>setPassword(e.target.value)}
-            className="w-full p-3 rounded-lg border border-brand-input-border bg-brand-bg text-brand-navy pr-12"/>
-
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              placeholder="Enter the password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="input-disco w-full p-3 pr-12"
+            />
             <button
-            type="button"
-            onClick={()=>setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-text hover:text-brand-navy">
-              {showPassword ? <FaEyeSlash/>:<FaEye/>}
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-text hover:text-brand-navy"
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
             </button>
           </div>
 
@@ -114,33 +114,27 @@ function Register() {
             type="text"
             placeholder="Country"
             value={country}
-            onChange={(e) =>
-              setCountry(e.target.value)
-            }
-            className=" justify-center w-full p-3 bg-brand-bg border border-brand-input-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple"
+            onChange={(e) => setCountry(e.target.value)}
+            className="input-disco w-full p-3"
           />
 
           <textarea
             placeholder="Tell us about yourself..."
             value={bio}
-            onChange={(e) =>
-              setBio(e.target.value)
-            }
+            onChange={(e) => setBio(e.target.value)}
             rows="4"
-            className="w-full p-3 bg-brand-bg border border-brand-input-border rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-brand-purple"
-          ></textarea>
+            className="input-disco w-full p-3 resize-none"
+          />
 
           <button
+            type="button"
             onClick={handleRegister}
-            className="w-full bg-brand-purple hover:bg-brand-purple-dark text-white py-3 rounded-xl font-semibold text-lg transition duration-300"
+            className="btn-gradient w-full py-3.5 rounded-xl font-semibold text-lg"
           >
             Register
           </button>
-
         </form>
-
       </div>
-
     </div>
   );
 }
