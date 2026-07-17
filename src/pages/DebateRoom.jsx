@@ -1,6 +1,6 @@
 //DebateRoom.jsx
 
-import { useState, useEffect } from "react";
+import { useState, useEffect,useRef} from "react";
 import { useParams } from "react-router-dom";
 
 import {doc,getDoc,setDoc,collection,addDoc,orderBy,limit,getDocs,query,where,updateDoc,increment,onSnapshot,arrayUnion} from "firebase/firestore";
@@ -35,6 +35,7 @@ function DebateRoom() {
   const [supportCount, setSupportCount] = useState(0);
   const [opposeCount, setOpposeCount] = useState(0);
   const [isActiveSpeaker, setIsActiveSpeaker] = useState(false);
+  const alertRef=useRef(false);
 
 
 
@@ -79,39 +80,59 @@ async function joinaudience() {
     fetchParticipants();
   }, []);
 
-  useEffect(()=>{
+  useEffect(() => {
+
     if (
-      !activeSpeaker ||
-      activeSpeaker === "" ||
-      activeSpeaker !== auth.currentUser?.email
+        !activeSpeaker ||
+        activeSpeaker === "" ||
+        activeSpeaker !== auth.currentUser?.email
     ){
-      return;
+        alertRef.current = false;
+        return;
     }
 
-  if(SpeakerTimeLeft<=0){
-    alert("your speaking time is completed");
-    setArgument("");
-    approveSpeaker();
-    return;
-  }
+    if (SpeakerTimeLeft === 120) {
+        alertRef.current = false;
+    }
 
-  const timer=setTimeout(()=>{
-    setSpeakerTimeLeft((prev)=>prev-1);
-  },1000)
+    if (SpeakerTimeLeft === 0 && !alertRef.current) {
 
-  return()=>clearTimeout(timer);
-},[SpeakerTimeLeft,activeSpeaker]);
+        alertRef.current = true;
+
+        alert("Your speaking time is completed");
+
+        setArgument("");
+
+        setTimeout(() => {
+            approveSpeaker();
+        },500);
+
+        return;
+    }
+    if (SpeakerTimeLeft <= 0) return;
+
+    const timer = setTimeout(() => {
+        setSpeakerTimeLeft(prev => prev - 1);
+    },1000);
+
+    return () => clearTimeout(timer);
+
+}, [SpeakerTimeLeft, activeSpeaker]);
 
 
  useEffect(() => {
 
-  if (!debate?.endTime) return;
+   if (!debate?.started) {
+    setDebateTimeLeft("Not Started Yet");
+    return;
+  }
 
   if (debate.ended) {
     setDebateTimeLeft("Debate Closed");
     setDebateEnded(true);
     return;
   }
+
 
   const end = debate.endTime.toDate().getTime();
 
@@ -129,8 +150,6 @@ async function joinaudience() {
 
       setDebateEnded(true);
 
-      alert("⏰ The debate time is over. This debate is now closed — no one can enter.");
-
        await updateDoc(doc(db, "debates", id), {
         ended: true,
       });
@@ -138,8 +157,9 @@ async function joinaudience() {
       return;
     }
 
-    const minutes = Math.floor(distance / 1000 / 60);
-    const seconds = Math.floor((distance / 1000) % 60);
+    const minutes = Math.floor(distance / (1000 * 60));
+
+    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
     setDebateTimeLeft(
       `${String(minutes).padStart(2,"0")}:${String(seconds).padStart(2,"0")}`
@@ -194,6 +214,9 @@ useEffect(() => {
         };
 
         setDebate(data);
+        console.log("ended =", data.ended);
+        console.log("endTime =", data.endTime?.toDate());
+        console.log("started =", data.started);
         setDebateEnded(data.ended || false);
         setTeamVote({
           support: data.supportVotes || 0,
@@ -208,10 +231,11 @@ useEffect(() => {
         if (data.activeSpeaker && data.speakerStartTime) {
           const startedAt = data.speakerStartTime.toDate().getTime();
           const elapsedSeconds = Math.floor((Date.now() - startedAt) / 1000);
-          setSpeakerTimeLeft(Math.max(120 - elapsedSeconds, 0));
-        } else {
-          setSpeakerTimeLeft(0);
-        }
+
+           const remaining = 120 - elapsedSeconds;
+
+         setSpeakerTimeLeft(remaining > 0 ? remaining : 0);
+        } 
     }
 });
 
@@ -659,11 +683,25 @@ const chooseSide = async (selectedSide) => {
 
 };
 
-const joinLiveDebate= ()=>{
+const joinLiveDebate=async()=>{
 
   if(!side){
     alert("please choose your side");
     return;
+  }
+
+  const debateRef = doc(db, "debates", id);
+  const debateSnap = await getDoc(debateRef);
+  const debateData = debateSnap.data();
+
+  if (!debateData.started || debateData.ended) {
+
+    await updateDoc(debateRef, {
+      started: true,
+      ended: false,
+      endTime: new Date(Date.now() + 20 * 60 * 1000),
+    });
+
   }
   setShowVideoCall(true);
 };
@@ -801,10 +839,14 @@ const announceResult=async()=>{
 
 const RaiseHand = async () => {
 
-  console.log(auth.currentUser);
-
   if (!auth.currentUser) {
-    console.log("No user logged in");
+    alert("Please login first.");
+    return;
+  }
+
+  // Check whether the user selected a side
+  if (!side) {
+    alert("Please choose your side before raising your hand.");
     return;
   }
 
@@ -821,14 +863,18 @@ const RaiseHand = async () => {
 
   const moveToNextSpeaker = async () => {
 
+    const debateRef = doc(db,"debates",id);
+
     if (speakerQueue.length === 0) {
 
-        setActiveSpeaker("");
+        await updateDoc(debateRef, {
+            activeSpeaker: "",
+            speakerStartTime: null,
+        });
 
+        setActiveSpeaker("");
         return;
     }
-
-    const debateRef = doc(db,"debates",id);
 
     const nextSpeaker = speakerQueue[0];
 
@@ -840,20 +886,16 @@ const RaiseHand = async () => {
 
     if (!debate.started) {
         updates.started = true;
-        updates.endTime = new Date(Date.now() + 20 * 60 * 1000);
     }
 
     await updateDoc(debateRef, updates);
 
     setActiveSpeaker(nextSpeaker);
-
     setSpeakerQueue(speakerQueue.slice(1));
-
     setSpeakerTimeLeft(120);
 };
 
 const approveSpeaker = async () => {
-
   await moveToNextSpeaker();
 };
 
@@ -968,7 +1010,7 @@ const chooseNextSpeaker=async()=>{
 };
 
 const autoApproveNextSpeaker=async()=>{
-  await movetoNextSpeaker();
+  await moveToNextSpeaker();
 }
 
 
@@ -1049,7 +1091,7 @@ const secondaryBtn = "bg-white/10 hover:bg-white/15 border border-white/15 text-
             </h2>
 
             <p className="text-4xl font-bold text-fuchsia-300 mt-3">
-              {debate.endTime ? debateTimeLeft : "Not Started Yet"}
+              {debateTimeLeft}
             </p>
           </div>
 

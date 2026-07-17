@@ -19,10 +19,6 @@ function CreateDebate() {
       return;
     }
 
-    const endTime=new Date(
-      Date.now() + 5*60*1000
-    );
-
     try {
       await addDoc(collection(db, "debates"), {
         title,
@@ -37,7 +33,9 @@ function CreateDebate() {
 
         userEmail: auth.currentUser.email,
         createdAt: new Date(),
-        endTime: endTime,
+        endTime:null,
+        ended:false,
+        started:false,
       });
 
       if (roomType === "Invite Only" && inviteEmail) {
@@ -58,7 +56,9 @@ function CreateDebate() {
       setInviteEmail("");
     } catch (error) {
       console.log(error);
-      alert(error.message);
+      console.log(error.code);
+      console.log(error.message);
+      alert(error.code+"\n"+error.message);
     }
   };
 
@@ -66,11 +66,13 @@ function CreateDebate() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_rgba(139,92,246,0.15),_transparent_60%),radial-gradient(ellipse_at_bottom,_rgba(59,130,246,0.12),_transparent_60%)] bg-[#07070d] text-white p-8">
-      <PageNavigator/>
+     
       <div className="max-w-3xl mx-auto">
         <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl shadow-[0_25px_80px_-20px_rgba(168,85,247,0.45)] p-8 overflow-hidden">
           <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-fuchsia-500/20 blur-3xl pointer-events-none" />
           <div className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-blue-500/20 blur-3xl pointer-events-none" />
+
+           <PageNavigator/>
 
           <h1 className="relative text-4xl font-extrabold text-center mb-8 bg-gradient-to-r from-purple-400 via-fuchsia-400 to-blue-400 bg-clip-text text-transparent">
             🗣️ Create Debate

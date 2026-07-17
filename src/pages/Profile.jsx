@@ -79,13 +79,14 @@ function Profile() {
 
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl shadow-[0_25px_80px_-20px_rgba(168,85,247,0.45)] overflow-hidden">
 
-          <div className="h-48 bg-gradient-to-br from-purple-600 via-fuchsia-500 to-blue-500 relative">
+          <div className="relative h-56 bg-gradient-to-br from-purple-600 via-fuchsia-500 to-blue-500 overflow-hidden">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,204,112,0.35),transparent_60%)]" />
           </div>
 
-          <div className="flex flex-col items-center -mt-16">
+          <div className="relative z-20 flex flex-col items-center -mt-16">
 
-            <div className="w-32 h-32 rounded-full border-4 border-[#0e0e18] overflow-hidden bg-white/10 shadow-[0_15px_40px_-10px_rgba(217,70,239,0.6)]">
+            <div className="relative z-30 w-36 h-36 rounded-full p-1 bg-gradient-to-r from-fuchsia-500 via-purple-500 to-blue-500 shadow-[0_20px_60px_rgba(168,85,247,0.6)]">
+              <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#111827] bg-[#111827]">
               <img
                 src={
                   profileImage ||
@@ -93,8 +94,9 @@ function Profile() {
                   "https://ui-avatars.com/api/?name=Rishmitha&background=7C3AED&color=fff"
                 }
                 alt="Profile"
-                className="w-32 h-32 rounded-full border-4 border-[#0e0e18] shadow-lg object-cover"
+                className="w-full h-full object-cover"
               />
+            </div>
             </div>
 
             <h2 className="text-3xl font-extrabold mt-4 bg-gradient-to-r from-fuchsia-300 to-purple-300 bg-clip-text text-transparent">
