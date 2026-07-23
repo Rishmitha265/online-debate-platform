@@ -32,6 +32,7 @@ function App (){
       <Route path="/login" element={ <Login/>}/>
       <Route path="/Register" element={<Register />}/>
       <Route path="/create" element={<CreateDebate/>}/>
+      <Route path="/edit/:id" element={<CreateDebate/>}/>
       <Route path="/debate/:id" element={<DebateRoom/>}/>
       <Route path="/Profile" element={<Profile />}/>
       <Route path="/leaderboard" element={<Leaderboard />}/>

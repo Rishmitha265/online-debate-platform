@@ -1,7 +1,8 @@
 //CreateDebate.jsx
 
-import { useState } from "react";
-import { collection, addDoc } from "firebase/firestore";
+import { useState,useEffect} from "react";
+import { useParams,useNavigate } from "react-router-dom";
+import { collection, addDoc, doc, getDoc, updateDoc} from "firebase/firestore";
 import { db, auth } from "../services/firebase";
 import PageNavigator from "../components/PageNavigator";
 
@@ -12,54 +13,132 @@ function CreateDebate() {
   const [category, setCategory] = useState("");
   const [formate, setFormate] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
+  const [image,SetImage]=useState(null);
+  const [imageUrl,setImageUrl]=useState("");
+  const {id}=useParams();
+  const navigate = useNavigate();
+
+  useEffect(()=>{
+    if (id){
+      fetchDebate();
+    }
+  },[id]);
+
+  const fetchDebate = async()=>{
+    try{
+      const debateRef = doc(db,"debates",id);
+      const debateSnap = await getDoc(debateRef);
+
+      if (debateSnap.exists()){
+        const data=debateSnap.data();
+
+        setTitle(data.title || "");
+        setDescription(data.description||"");
+        setCategory(data.category || "");
+        setFormate(data.formate || "");
+        setRoomType(data.roomType || "");
+
+          // if you already store imageUrl
+          setImageUrl(data.imageUrl || "");
+      }
+    }catch(error){
+      console.log(error);
+    }
+  }
+
+  const uploadImage = async ()=>{
+    if (!image) return "";
+
+    const formData=new FormData();
+    formData.append("file",image);
+    formData.append("upload_preset","debate-platform");
+
+    const response=await fetch(
+      "https://api.cloudinary.com/v1_1/dnqbkyxx3/image/upload",
+      {
+        method:"POST",
+        body:formData,
+      }
+    );
+
+    const data = await response.json();
+    setImageUrl(data.secure_url);
+    return data.secure_url;
+  }
 
   const handleCreateDebate = async () => {
     if (!auth.currentUser) {
       alert("Please login first.");
       return;
     }
-
+    
     try {
-      await addDoc(collection(db, "debates"), {
-        title,
-        description,
-        category,
-        formate,
-        roomType,
+  const uploadedImage = image
+    ? await uploadImage()
+    : imageUrl;
 
-        supportVotes: 0,
-        opposeVotes: 0,
-        neutralVotes: 0,
+  // EDIT MODE
+  if (id) {
+    await updateDoc(doc(db, "debates", id), {
+      title,
+      description,
+      category,
+      formate,
+      roomType,
+      image: uploadedImage,
+    });
 
-        userEmail: auth.currentUser.email,
-        createdAt: new Date(),
-        endTime:null,
-        ended:false,
-        started:false,
-      });
+    alert("Debate Updated Successfully");
+    navigate("/");
+    return;
+  }
 
-      if (roomType === "Invite Only" && inviteEmail) {
-        await addDoc(collection(db, "notifications"), {
-          userEmail: inviteEmail,
-          message: `You have been invited to join "${title}"`,
-          createdAt: new Date(),
-        });
-      }
+  // CREATE MODE
+  await addDoc(collection(db, "debates"), {
+    title,
+    description,
+    category,
+    formate,
+    roomType,
 
-      alert("Debate Created Successfully!");
+    image: uploadedImage,
 
-      setTitle("");
-      setDescription("");
-      setCategory("");
-      setFormate("");
-      setRoomType("");
-      setInviteEmail("");
-    } catch (error) {
-      console.log(error);
-      console.log(error.code);
-      console.log(error.message);
-      alert(error.code+"\n"+error.message);
-    }
+    supportVotes: 0,
+    opposeVotes: 0,
+    neutralVotes: 0,
+
+    userEmail: auth.currentUser.email,
+    createdAt: new Date(),
+    endTime: null,
+    ended: false,
+    started: false,
+  });
+
+  // Send invite notification only when creating
+  if (roomType === "Invite Only" && inviteEmail) {
+    await addDoc(collection(db, "notifications"), {
+      userEmail: inviteEmail,
+      message: `You have been invited to join "${title}"`,
+      createdAt: new Date(),
+    });
+  }
+
+  alert("Debate Created Successfully");
+
+  setTitle("");
+  setDescription("");
+  setCategory("");
+  setFormate("");
+  setRoomType("");
+  setInviteEmail("");
+  SetImage(null);
+  setImageUrl("");
+
+} catch (error) {
+  console.log(error);
+  alert(error.message);
+}
+    
   };
 
   const inputClass = "w-full bg-white/5 backdrop-blur border border-white/10 rounded-xl p-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/50 focus:border-fuchsia-500/40 transition";
@@ -75,7 +154,7 @@ function CreateDebate() {
            <PageNavigator/>
 
           <h1 className="relative text-4xl font-extrabold text-center mb-8 bg-gradient-to-r from-purple-400 via-fuchsia-400 to-blue-400 bg-clip-text text-transparent">
-            🗣️ Create Debate
+              {id?"Edit Debate":"🗣️ Create Debate"}
           </h1>
 
           <div className="relative space-y-5">
@@ -94,6 +173,12 @@ function CreateDebate() {
               rows={5}
               className={inputClass}
             />
+
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e)=>SetImage(e.target.files[0])}
+              className={inputClass}/>
 
             <select
               value={category}
@@ -153,7 +238,7 @@ function CreateDebate() {
               onClick={handleCreateDebate}
               className="w-full bg-gradient-to-r from-purple-600 via-fuchsia-500 to-blue-500 hover:from-purple-500 hover:via-fuchsia-400 hover:to-blue-400 text-white font-bold py-4 rounded-xl shadow-[0_15px_40px_-10px_rgba(217,70,239,0.6)] hover:shadow-[0_20px_50px_-10px_rgba(217,70,239,0.8)] transition-all duration-300 hover:-translate-y-0.5"
             >
-              Create Debate
+              {id?"Update Debate":"Create Debate"}
             </button>
           </div>
         </div>

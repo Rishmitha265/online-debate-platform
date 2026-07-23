@@ -2,7 +2,15 @@ import { Link } from "react-router-dom";
 
 function DebateCard({ debate }) {
   return (
-    <div className="glass-card group flex flex-col h-full p-6 transition-all duration-300 hover:-translate-y-1 hover:border-brand-purple/50">
+    <div className="glass-card group flex flex-col h-full p-6 transition-all duration-300 hover:-translate-y-1 hover:border-brand-purple/50 relative">
+
+      {debate.live && (
+        <span className="absolute top-4 right-4 inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse z-10">
+          <span className="h-2 w-2 rounded-full bg-white"></span>
+          LIVE
+        </span>
+      )}
+
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {debate.category && (
           <span className="rounded-full bg-brand-purple/15 px-3 py-1 text-xs font-medium text-brand-purple">
@@ -20,6 +28,11 @@ function DebateCard({ debate }) {
           </span>
         )}
       </div>
+
+      <img 
+        src={debate.image}
+        alt={debate.title}
+        className="w-full aspect-video object-cover rounded-xl shadow-lg mb-4"/>
 
       <h2 className="text-2xl font-bold text-brand-navy mb-3 leading-tight">
         {debate.title}
@@ -46,9 +59,13 @@ function DebateCard({ debate }) {
 
       <Link
         to={`/debate/${debate.id}`}
-        className="btn-gradient block rounded-xl py-3 text-center font-semibold"
+        className={`block rounded-xl py-3 text-center font-semibold transition ${
+          debate.live
+            ? "bg-red-600 hover:bg-red-700 text-white"
+            : "btn-gradient"
+        }`}
       >
-        Join Debate →
+        {debate.live ? "🔴 Join Live Debate" : "Join Debate →"}
       </Link>
     </div>
   );

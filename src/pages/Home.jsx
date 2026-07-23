@@ -1,35 +1,35 @@
-import { collection,getDocs } from "firebase/firestore";
-import {db} from "../services/firebase";
+import { collection,getDocs,onSnapshot} from "firebase/firestore";
+import {db,auth} from "../services/firebase";
 import { useState,useEffect } from "react";
 import DebateCard from "../components/DebateCard";
 import Navbar from "../components/Navbar";
 import {deleteDoc,doc} from "firebase/firestore";
 import PageNavigator from "../components/PageNavigator";
+import { useNavigate } from "react-router-dom";
+import {FaEdit} from "react-icons/fa";
 
 function Home(){
     const [ debates,setDebates]=useState([]); //store the debates in []
     const [search,setSearch]=useState("");
     const [SelectedCategory,setSelectedCategory]=useState("");
+    const navigate = useNavigate();
 
-    useEffect(()=>{fetchDebates();},[])  //fetch the debates and store in [] from firestore
+    useEffect(()=>{
+      const unsubscribe=fetchDebates();
+      return ()=> unsubscribe();
+    },[])  //fetch the debates and store in [] from firestore
 
-    const fetchDebates=async()=>{
-
-     try{
-
-        const querySnapshot=await getDocs(collection(db,"debates"));
-
-        const debateList=querySnapshot.docs.map((doc) => ({
-            id:doc.id,
+    const fetchDebates = () => {
+        const unsubscribe = onSnapshot(collection(db, "debates"), (querySnapshot) => {
+          const debateList = querySnapshot.docs.map((doc) => ({
+            id: doc.id,
             ...doc.data(),
-        }));
+          }));
+          setDebates(debateList);
+        });
 
-         setDebates(debateList);}
-
-         catch(error){
-            console.log(error);
-         }
-    };
+        return unsubscribe;
+      };
 
     const filterDebates=debates.filter((debate)=>{
         if (!debate) return false;
@@ -127,16 +127,24 @@ function Home(){
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 
         {filterDebates.filter(Boolean).map((debate) => (
-  <div key={debate.id}
-className="bg-brand-bg border border-brand-border rounded-2xl shadow-lg p-6 hover:shadow-2xl transition duration-300 h-fit" >
+     <div key={debate.id}
+     className=" relative bg-brand-bg border border-brand-border rounded-2xl shadow-lg p-6 hover:shadow-2xl transition duration-300 h-fit" >
     <DebateCard debate={debate} />
 
-    <button
-      onClick={() => deleteDebate(debate.id)}
-      className="w-full mt-3 bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg"
-    >
-      🗑️ Delete Debate
-    </button>
+    {auth.currentUser?.email===debate.userEmail && (
+      <>
+      <button
+      onClick={()=>navigate(`/edit/${debate.id}`)}
+      className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-200 transition"
+      title = "Edit Debate">
+        <FaEdit size={20} className="text-yellow-600"/>
+        </button>
+        
+        <button 
+        onClick={()=>deleteDebate(debate.id)}
+        className="w-full mt-3 bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg transition-all duration-300 hover:-translate-y-0.5 shadow-[0_10px_25px_-8px_rgba(239,68,68,0.5)] hover:shadow-[0_15px_35px_-8px_rgba(239,68,68,0.7)]">
+          Delete Debate</button></>
+    )} 
   </div>
 ))}
      </div>   
