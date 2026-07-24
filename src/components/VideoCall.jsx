@@ -402,7 +402,7 @@ function VideoCall() {
             disabled={role !== null}
             className="bg-gradient-to-r from-purple-500 via-fuchsia-500 to-blue-500 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-fuchsia-500/40"
           >
-            Start (Supporter)
+            Start Call (Supporter)
           </button>
 
           <button
@@ -410,7 +410,7 @@ function VideoCall() {
             disabled={role !== null}
             className="bg-gradient-to-r from-indigo-500 to-blue-600 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-indigo-500/40"
           >
-            Start (Opponent)
+            Join Call (Opponent)
           </button>
         </div>
 
