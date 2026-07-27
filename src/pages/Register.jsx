@@ -24,7 +24,10 @@ function Register() {
   const handleRegister = async () => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await sendEmailVerification(userCredential.user);
+      await sendEmailVerification(userCredential.user,{
+        url:"https://online-debate-platform-1su7-three.vercel.app/login",
+        handleCodeInApp:false,
+      });
 
       alert(
         "Registration successful!\n\n Verification has been send to your email.\n Please verify your email before logging in."
