@@ -15,6 +15,7 @@ function Home(){
     const navigate = useNavigate();
 
     useEffect(()=>{
+      if(!auth.currentUser) return;
       const unsubscribe=fetchDebates();
       return ()=> unsubscribe();
     },[])  //fetch the debates and store in [] from firestore

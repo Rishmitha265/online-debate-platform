@@ -49,16 +49,16 @@ function Login() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      setEmail("");
-      setPassword("");
-      alert("Logged out Successfully");
-    } catch (error) {
-      alert(error.message);
-    }
-  };
+  // const handleLogout = async () => {
+  //   try {
+  //     await signOut(auth);
+  //     setEmail("");
+  //     setPassword("");
+  //     alert("Logged out Successfully");
+  //   } catch (error) {
+  //     alert(error.message);
+  //   }
+  // };
 
   const handleGoogleLogin = async () => {
     try {
@@ -211,12 +211,12 @@ function Login() {
             </Link>
           </p>
 
-          <button
+          {/* <button
             onClick={handleLogout}
             className="btn-ghost-glow w-full mt-8 py-4 rounded-xl text-lg font-bold"
           >
             Logout
-          </button>
+          </button> */}
         </div>
       </div>
     </div>
