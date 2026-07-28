@@ -20,7 +20,6 @@ import Settings from "./pages/Settings";
 import Dashboard from "./pages/Dashboard";
 import Moderator from "./pages/Moderator";
 import ProtectedRoute from "./pages/ProtectedRoutes";
-import AuthAction from "./pages/AuthAction";
 function App (){
 
   return(
@@ -47,7 +46,6 @@ function App (){
       <Route path="/settings" element={<Settings/>}/>
       <Route path="/Dashboard" element={<Dashboard/>}/>
       <Route path="/Moderator" element={<Moderator/>}/>
-      <Route path="/auth-action" element={<AuthAction/>}/>
 
      
     </Routes>

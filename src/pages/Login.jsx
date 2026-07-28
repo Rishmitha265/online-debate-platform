@@ -20,14 +20,13 @@ function Login() {
 
   const handleLogin = async () => {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      await signInWithEmailAndPassword(auth, email, password);
 
-      if (!user.emailVerified) {
-        await signOut(auth);
-        alert("Please verify your email before logging in.");
-        return;
-      }
+      // if (!user.emailVerified) {
+      //   await signOut(auth);
+      //   alert("Please verify your email before logging in.");
+      //   return;
+      // }
 
       alert("Logged in Successfully");
       navigate("/");

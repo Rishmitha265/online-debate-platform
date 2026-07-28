@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { createUserWithEmailAndPassword} from "firebase/auth";
 import { auth, db } from "../services/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -24,14 +24,15 @@ function Register() {
   const handleRegister = async () => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await sendEmailVerification(userCredential.user,{
-        url:"https://online-debate-platform-1su7-three.vercel.app/login",
-        handleCodeInApp:false,
-      });
+      alert("Registration Successfull");
+      // await sendEmailVerification(userCredential.user,{
+      //   url:"https://online-debate-platform-1su7-three.vercel.app/login",
+      //   handleCodeInApp:false,
+      // });
 
-      alert(
-        "Registration successful!\n\n Verification has been send to your email.\n Please verify your email before logging in."
-      );
+      // alert(
+      //   "Registration successful!\n\n Verification has been send to your email.\n Please verify your email before logging in."
+      // );
 
       const user = userCredential.user;
 
